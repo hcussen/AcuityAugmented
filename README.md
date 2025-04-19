@@ -1,23 +1,22 @@
 # AcuityAugmented
 
-A monorepo for tracking and visualizing real-time schedule changes from Acuity Scheduling. The system takes daily snapshots of the schedule and tracks changes through webhooks, providing an hourly diff view of additions and cancellations.
+A modern full-stack application for tracking and visualizing real-time schedule changes from Acuity Scheduling. The system captures daily schedule snapshots and processes real-time webhook events to provide an intuitive diff view of appointments, helping you monitor additions, cancellations, and modifications to your schedule.
 
-## Structure
+## Project Structure
 
 ```
 /
-├── backend/      # FastAPI application with SQLite
-├── frontend/     # Next.js application
-└── shared/       # Shared TypeScript types
+├── backend/      # FastAPI application (Python 3.11+)
+├── frontend/     # Next.js 15.3 application
+└── setup.sh      # Development environment setup script
 ```
 
-## Features
+## Key Features
 
-- Daily schedule snapshots (3:30 PM)
-- Real-time webhook processing
-- Hourly diff view
-- Responsive UI
-- Local SQLite database
+- 📅 Daily schedule snapshots with automatic synchronization
+- ⚡ Real-time webhook processing for immediate updates
+- 🔄 Intuitive diff view for schedule changes
+- 📱 Responsive modern UI built with React 19 and TailwindCSS
 
 ## Prerequisites
 
@@ -25,22 +24,26 @@ A monorepo for tracking and visualizing real-time schedule changes from Acuity S
 - Node.js 18+
 - pnpm (for frontend package management)
 - Acuity Scheduling API credentials
+- ngrok (for tunneling to local development servers)
 
 ## Getting Started
 
 1. Clone the repository
 
 2. Set up the backend:
+
    ```bash
    cd backend
-   python -m venv venv
-   source venv/bin/activate  # On Windows: .\venv\Scripts\activate
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .\.venv\Scripts\activate
    pip install -r requirements.txt
    cp .env.example .env
    ```
+
    Update `.env` with your Acuity API credentials
 
 3. Set up the frontend:
+
    ```bash
    cd frontend
    pnpm install
@@ -50,28 +53,39 @@ A monorepo for tracking and visualizing real-time schedule changes from Acuity S
 4. Start the development environment:
 
    Option 1 - Using the setup script (macOS with iTerm2):
+
    ```bash
-   ./setup.sh
+   ./setup.sh && ngrok http --url=<your-ngrok-url> 8000
    ```
+
    This will create an iTerm2 window with 4 panes:
+
    - Top Left: Frontend development server
    - Bottom Left: Backend development server
-   - Top Right: Backend virtual environment shell
-   - Bottom Right: Git management
+   - Top Right: Git management
+   - Bottom Right: Backend virtual environment shell
 
    Option 2 - Manual setup:
 
    Terminal 1 (Backend):
+
    ```bash
    cd backend
-   source venv/bin/activate  # On Windows: .\venv\Scripts\activate
-   uvicorn app.main:app --reload --port 8000
+   source .venv/bin/activate  # On Windows: .\.venv\Scripts\activate
+   fastapi dev main.py
    ```
 
    Terminal 2 (Frontend):
+
    ```bash
    cd frontend
    pnpm dev
+   ```
+
+   Terminal 3 (ngrok):
+
+   ```bash
+   ngrok http --url=<your-ngrok-url> 8000
    ```
 
 5. Access the applications:
@@ -84,24 +98,13 @@ A monorepo for tracking and visualizing real-time schedule changes from Acuity S
 ### Backend (FastAPI)
 
 - REST API endpoints for webhooks and diffs
-- SQLite database for simple, local storage
-- APScheduler for daily snapshots (3:30 PM)
-- Pydantic for data validation
-- Automatic database creation and migrations
+- SQLite database for simple local storage
 
 ### Frontend (Next.js)
 
 - Modern React with TypeScript
 - Real-time updates (1-minute polling)
 - Responsive two-column diff view
-- Shared type definitions
-
-### Database (Supabase)
-
-- Local Supabase instance for development
-- PostgreSQL 15 with extensions
-- Supabase Studio for database management
-- Automatic migrations (coming soon)
 
 ## License
 
