@@ -19,12 +19,13 @@ router = APIRouter(
     tags=["webhook"]
 )
 
-@router.post("/appt_changed")
+@router.post("/appt-changed")
 async def handle_appt_changed(
     action: str = Form(...),
     id: str = Form(...),
     calendarID: Optional[str] = Form(None),
     appointmentTypeID: Optional[str] = Form(None),
+    mock: Optional[bool] = False,
     db: Session = Depends(get_db)
 ):
     print(f"Received webhook: Action={action}, ID={id}, Calendar={calendarID}, Type={appointmentTypeID}")
@@ -34,34 +35,19 @@ async def handle_appt_changed(
     if action not in valid_actions:
         return {"status": "error", "message": f"Invalid action: {action}"}
     
-    return {"status": "well you got here at least"}
-
-
-@router.post("/mock")
-def mock_webhook(
-    action: str = Form(...),
-    id: str = Form(...),
-    calendarID: Optional[str] = Form(None),
-    appointmentTypeID: Optional[str] = Form(None),
-    db: Session = Depends(get_db)):
     try:
         # Check if appointment exists
-        print(id)
         try: 
             q = select(Appointment).where(Appointment.id == id)
             existing_appt = db.scalars(q).all()[0]
         except:
             existing_appt = None
         
-        print('existing:', existing_appt)
         # Fetch appointment details from Acuity API
         try:
-            appt_details: AcuityAppointment = acuity_client.get_appointment(id, mock=True)
+            appt_details: AcuityAppointment = acuity_client.get_appointment(id, mock=mock)
         except requests.exceptions.RequestException as e:
             raise HTTPException(status_code=500, detail=f"Failed to fetch appointment details: {str(e)}")
-        
-        # TODO: Process appointment details as needed
-        print('acuity:', appt_details)
         
         res = ''
         action_taken = ''
@@ -113,3 +99,15 @@ def mock_webhook(
         traceback.print_exc()
         print(str(e))
         return {"status": "error", "message": str(e)}
+
+
+
+@router.post("/mock")
+def mock_webhook(
+    action: str = Form(...),
+    id: str = Form(...),
+    calendarID: Optional[str] = Form(None),
+    appointmentTypeID: Optional[str] = Form(None),
+    db: Session = Depends(get_db)):
+
+    return handle_appt_changed(action, id, calendarID, appointmentTypeID, mock=True)
