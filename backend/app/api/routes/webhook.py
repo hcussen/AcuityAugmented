@@ -6,6 +6,8 @@ from sqlalchemy import select, update
 import requests
 from datetime import datetime 
 
+import traceback
+
 from app.core.acuityClient import acuity_client
 
 from app.database import get_db
@@ -112,5 +114,6 @@ def mock_webhook(
             
     except Exception as e:
         # db.rollback()
+        traceback.print_exc()
         print(str(e))
         return {"status": "error", "message": str(e)}

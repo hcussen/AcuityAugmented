@@ -20,4 +20,4 @@ class Appointment(Base):
     last_modified_here: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 
     def __repr__(self) -> str:
-        return f"Appt #{self.id}: {self.first_name} {self.last_name} created_at: {self.created_at} deleted: {self.is_deleted} at {self.deleted_at}"
+        return f"Appt #{self.id}: {self.first_name} {self.last_name} is_deleted: {self.is_deleted} acuity: {self.acuity_created_at}"
