@@ -18,8 +18,9 @@ class AppointmentCreate(BaseModel):
     created_at: datetime
 
 @app.get("/")
-def read_root():
-    return {"Hello": "World"}
+def read_root(db: Session = Depends(get_db)):
+    appointments = db.query(models.Appointment).filter(models.Appointment.is_deleted == False).all()
+    return {"appointments": appointments}
 
 @app.post("/appointments")
 def create_appointment(appointment: AppointmentCreate, db: Session = Depends(get_db)):
