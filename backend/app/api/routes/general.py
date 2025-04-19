@@ -13,6 +13,8 @@ router = APIRouter(
 # Request model for appointment creation
 class AppointmentCreate(BaseModel):
     name: str
+    start_time: datetime
+    duration: int
     created_at: datetime
 
 @router.post("/appointments")
@@ -20,8 +22,9 @@ def create_appointment(appointment: AppointmentCreate, db: Session = Depends(get
     try:
         db_appointment = Appointment(
             name=appointment.name,
+            start_time=appointment.start_time,
+            duration=appointment.duration,
             created_at=appointment.created_at,
-            is_deleted=False
         )
         db.add(db_appointment)
         db.commit()

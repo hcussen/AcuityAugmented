@@ -1,11 +1,6 @@
-from typing import Union
-from fastapi import FastAPI, Depends
-from app.database import engine, get_db
-from app import models
-from sqlalchemy.orm import Session
-
-# Create tables
-models.Base.metadata.create_all(bind=engine)
+from fastapi import FastAPI
+from app.api import api_router
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title="Your API",
@@ -13,7 +8,21 @@ app = FastAPI(
     version="0.1.0",
 )
 
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "https://informed-easily-oryx.ngrok-free.app"],  # Your Next.js frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all methods or specify: ["GET", "POST", etc.]
+    allow_headers=["*"],  # Allow all headers or specify needed ones
+)
+
+
+# Add a simple root endpoint
 @app.get("/")
-def read_root(db: Session = Depends(get_db)):
-    appointments = db.query(models.Appointment).filter(models.Appointment.is_deleted == False).all()
-    return {"appointments": appointments}
+async def root():
+    return {"message": "Hello World"}
+
+
+# Include all API routes
+app.include_router(api_router)
