@@ -46,6 +46,7 @@ def create_appointment(appt: AppointmentCreate, db: Session = Depends(get_db)):
 def get_schedule_diff(db: Session = Depends(get_db)):
     try:
         # Get current date boundaries
+        # TODO: Use current time instead of fixed timestamp
         now = datetime(2025, 4, 19, 12, 25, 27)  # Using provided timestamp
         today_start = datetime(now.year, now.month, now.day)
         today_end = today_start + timedelta(days=1)
