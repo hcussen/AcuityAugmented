@@ -48,6 +48,21 @@ def isToday(timestamp_string):
             timestamp.month == today.month and
             timestamp.day == today.day)
 
+def createNewAppointment(appt: AcuityAppointment, db):
+    db_appointment = Appointment(
+        id=appt['id'],
+        first_name=appt['firstName'],
+        last_name=appt['lastName'],
+        start_time=datetime.fromisoformat(appt['datetime']),
+        duration=appt['duration'],
+        acuity_created_at=datetime.fromisoformat(appt['datetimeCreated']),
+        is_deleted=appt['canceled']
+    )
+    db.add(db_appointment)
+    db.commit()
+    db.refresh(db_appointment)
+    return db_appointment
+
 def updateStartTime(appt: Appointment, newStart: datetime, db):
     print(newStart, type(newStart))
     q = update(Appointment)\
@@ -83,13 +98,15 @@ def mock_webhook(
     try:
         # Check if appointment exists
         print(id)
-        q = select(Appointment).where(Appointment.id == id)
-        existing_appt = db.scalars(q).all()[0]
+        try: 
+            q = select(Appointment).where(Appointment.id == id)
+            existing_appt = db.scalars(q).all()[0]
+        except:
+            existing_appt = None
         
         print('existing:', existing_appt)
         # Fetch appointment details from Acuity API
         try:
-            pass 
             appt_details: AcuityAppointment = acuity_client.get_appointment(id, mock=True)
         except requests.exceptions.RequestException as e:
             raise HTTPException(status_code=500, detail=f"Failed to fetch appointment details: {str(e)}")
@@ -100,7 +117,23 @@ def mock_webhook(
         res = ''
         action_taken = ''
         direction = ''
-        if existing_appt:
+        if not existing_appt:
+            if isToday(appt_details['datetime']) and not appt_details['canceled']:
+                action_taken = 'schedule'
+                direction = 'null->today'
+                res = createNewAppointment(appt_details, db)
+            elif isToday(appt_details['datetime']) and appt_details['canceled']:
+                # else if changed to canceled and original time was today:
+                #   decision point: either ignore or add with canceled status
+                #   this is relevant if you are starting from no appts
+                action_taken = 'cancel'
+                direction = "today->null"
+                res = createNewAppointment(appt_details, db)
+            else:
+                action_taken = 'ignored'
+                direction = 'null->null'
+                res = {'datetime': appt_details['datetime'], 'canceled': appt_details['canceled'] }
+        else:
             if appt_details['canceled']:
                 action_taken = 'cancel'
                 direction =  'today->null'
@@ -115,16 +148,7 @@ def mock_webhook(
                 res = markAsSoftDelete(existing_appt, db)
             else:
                 raise Exception("existing appt - Shouldn't end up here")
-        else:
-            pass
-        #     if changed to scheduled for today:
-        #     add to database
-        # else if changed to rescheduled for today:
-        #     add to database
-        # else if changed to canceled and original time was today:
-        #     // decision point: either ignore or add with canceled status
-        # else:
-        #     // don't add to database (not relevant for today)
+        
         return {
             "status": "success", 
             "data": { 
