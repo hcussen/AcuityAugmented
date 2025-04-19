@@ -20,19 +20,23 @@ router = APIRouter(
 )
 # Request model for appointment creation
 class AppointmentCreate(BaseModel):
-    name: str
+    id: int 
+    first_name: str
+    last_name: str
     start_time: datetime
     duration: int
-    created_at: datetime
+    acuity_created_at: datetime
 
 @router.post("/appointments")
-def create_appointment(appointment: AppointmentCreate, db: Session = Depends(get_db)):
+def create_appointment(appt: AppointmentCreate, db: Session = Depends(get_db)):
     try:
         db_appointment = Appointment(
-            name=appointment.name,
-            start_time=appointment.start_time,
-            duration=appointment.duration,
-            created_at=appointment.created_at,
+            id=appt.id,
+            first_name=appt.first_name,
+            last_name=appt.last_name,
+            start_time=appt.start_time,
+            duration=appt.duration,
+            acuity_created_at=appt.acuity_created_at
         )
         db.add(db_appointment)
         db.commit()
