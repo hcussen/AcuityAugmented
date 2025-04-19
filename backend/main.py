@@ -1,9 +1,16 @@
 from typing import Union
+from app.database import engine
+from app import models
 
 from fastapi import FastAPI
+app = FastAPI()
+
+# Create tables
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
+# Your routes and other FastAPI code...
 
 @app.get("/")
 def read_root():
