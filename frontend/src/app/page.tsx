@@ -4,6 +4,15 @@ import { useEffect, useState } from "react"
 import { HourlyDiff } from "@/lib/types"
 import { apiClient } from "@/lib/api-client"
 import { PlusCircle, MinusCircle } from "lucide-react"
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 
 export default function Home() {
   const [scheduleDiff, setScheduleDiff] = useState<Array<HourlyDiff> | null>(
@@ -28,29 +37,49 @@ export default function Home() {
       <main className="max-w-4xl mx-auto">
         <h1 className="text-2xl font-bold mb-6">Today's Schedule Changes</h1>
         <pre>{JSON.stringify(scheduleDiff, null, 2)}</pre>
-        <div className="border rounded-lg overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50 dark:bg-gray-800">
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  Hour
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-green-600 dark:text-green-400">
-                  <div className="flex items-center gap-2">
-                    <PlusCircle className="w-5 h-5" />
-                    Additions
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-red-600 dark:text-red-400">
-                  <div className="flex items-center gap-2">
-                    <MinusCircle className="w-5 h-5" />
-                    Subtractions
-                  </div>
-                </th>
-              </tr>
-            </thead>
-          </table>
-        </div>
+        <Table>
+          <TableCaption>A list of your recent invoices.</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[100px]">Hour</TableHead>
+              <TableHead>
+                <PlusCircle className="w-5 h-5" /> Additions
+              </TableHead>
+              <TableHead>
+                <MinusCircle className="w-5 h-5" /> Cancellations
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {scheduleDiff?.map((diff) => (
+              <TableRow key={diff.hour}>
+                <TableCell className="font-medium">{diff.hour}</TableCell>
+                <TableCell>
+                  {diff.added.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      {diff.added.map((appointment) => (
+                        <div key={appointment.id}>
+                          {appointment.first_name} {appointment.last_name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {diff.deleted.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      {diff.deleted.map((appointment) => (
+                        <div key={appointment.id}>
+                          {appointment.first_name} {appointment.last_name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </main>
     </div>
   )
