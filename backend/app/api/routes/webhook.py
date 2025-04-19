@@ -25,7 +25,7 @@ async def handle_appt_changed(
     id: str = Form(...),
     calendarID: Optional[str] = Form(None),
     appointmentTypeID: Optional[str] = Form(None),
-    mock: Optional[bool] = False,
+    mock: Optional[bool] = Form(False),
     db: Session = Depends(get_db)
 ):
     print(f"Received webhook: Action={action}, ID={id}, Calendar={calendarID}, Type={appointmentTypeID}")
