@@ -33,9 +33,6 @@ tell application "iTerm2"
         # Set up Pane B (git management pane - top right)
         tell paneB
             write text "cd \"${PROJECT_DIR}\""
-            write text "open -a 'Google Chrome' 'http://localhost:3000'"
-            write text "open -a 'Google Chrome' 'http://localhost:8000'"
-            write text "open -a 'Google Chrome' 'http://localhost:8000/docs'"
             write text "# Git management pane"
         end tell
         
@@ -61,3 +58,23 @@ tell application "iTerm2"
     end tell
 end tell
 EOF
+
+
+# Function to check if a port is accepting connections
+wait_for_port() {
+    local port=$1
+    echo "Waiting for port $port to be ready..."
+    while ! nc -z localhost $port; do
+        sleep 1
+    done
+    echo "Port $port is ready!"
+}
+
+# Wait for both services to be ready
+wait_for_port 3000  # Frontend
+wait_for_port 8000  # Backend
+
+# Open browser tabs once services are ready
+open -a 'Google Chrome' 'http://localhost:3000'
+open -a 'Google Chrome' 'http://localhost:8000'
+open -a 'Google Chrome' 'http://localhost:8000/docs'
