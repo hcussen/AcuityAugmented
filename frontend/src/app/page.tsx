@@ -29,7 +29,14 @@ export default function Home() {
       }
     }
 
+    // Initial fetch
     fetchDiff()
+
+    // Set up polling every 120 seconds
+    const pollInterval = setInterval(fetchDiff, 120 * 1000)
+
+    // Cleanup on unmount
+    return () => clearInterval(pollInterval)
   }, [])
 
   return (
