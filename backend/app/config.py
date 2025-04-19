@@ -13,6 +13,18 @@ class Settings(BaseSettings):
     acuity_user_id: str
     acuity_api_key: str
 
+    # Center Hours (start, end)
+    hours_open: dict = {
+        0: ('16:00', '20:00'),
+        1: ('16:00', '20:00'),
+        2: ('16:00', '20:00'),
+        3: ('16:00', '20:00'),
+        4: ('16:00', '19:00'),
+        5: ('10:00', '13:00'),
+        6: ('00:00', '00:00')
+    }
+    
+
     model_config = SettingsConfigDict(env_file=".env")
 
 

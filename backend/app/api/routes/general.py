@@ -2,13 +2,12 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from typing import Optional, Dict, List
+from typing import Dict, List
 from sqlalchemy import and_
 
-from app.types import AcuityAppointment
-import requests
+import traceback
 
-from app.core.acuityClient import acuity_client
+from app.config import settings
 from app.database import get_db
 from app.models import Appointment
 
@@ -50,6 +49,8 @@ def get_schedule_diff(db: Session = Depends(get_db)):
         now = datetime(2025, 4, 19, 12, 25, 27)  # Using provided timestamp
         today_start = datetime(now.year, now.month, now.day)
         today_end = today_start + timedelta(days=1)
+        today_day_of_week = now.weekday()
+        today_day_of_week = 1 # lock at tuesday for testing
 
         # Get all appointments for today
         today_appointments = db.query(Appointment).filter(
@@ -57,36 +58,39 @@ def get_schedule_diff(db: Session = Depends(get_db)):
                 Appointment.start_time >= today_start,
                 Appointment.start_time < today_end
             )
-        ).all()
+        ).order_by(Appointment.start_time).all()
 
         # Group appointments by hour
-        hourly_diffs: Dict[int, Dict[str, List[dict]]] = {}
-        for hour in range(24):
-            hour_start = today_start + timedelta(hours=hour)
-            hour_end = hour_start + timedelta(hours=1)
-            
-            # Filter appointments for this hour
-            hour_appointments = [
-                {
+        hourly_diffs: Dict[str, Dict[str, List[dict]]] = {}
+        center_open, center_close = settings.hours_open[today_day_of_week]
+        center_open = datetime.strptime(center_open, '%H:%M')
+        center_close = datetime.strptime(center_close, '%H:%M')
+        hours_open = int((center_close - center_open).total_seconds() // 3600)  # Convert seconds to hours
+
+        for i in range(hours_open):
+            hourly_diffs[datetime.strftime(center_open + timedelta(hours=i), '%H:%M')] = {
+                "added": [],
+                "deleted": []
+            }
+        
+        for appt in today_appointments:
+            hour = appt.start_time.strftime('%H:%M')
+            if appt.is_deleted:
+                hourly_diffs[hour]["deleted"].append({
                     "id": appt.id,
                     "first_name": appt.first_name,
                     "last_name": appt.last_name,
-                    "start_time": appt.start_time.isoformat(),
-                    "duration": appt.duration
-                }
-                for appt in today_appointments
-                if hour_start <= appt.start_time < hour_end
-            ]
-
-            # For now, we'll consider all appointments as "added"
-            # In a real implementation, you would compare with a previous state
-            # stored in the database or cache to determine added/deleted
-            hourly_diffs[hour] = {
-                "added": hour_appointments,
-                "deleted": []
-            }
+                    })
+            else:   
+                hourly_diffs[hour]["added"].append({
+                    "id": appt.id,
+                    "first_name": appt.first_name,
+                    "last_name": appt.last_name,
+                })
 
         return hourly_diffs
 
     except Exception as e:
+        print(e)
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
