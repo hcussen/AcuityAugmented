@@ -48,6 +48,20 @@ def isToday(timestamp_string):
             timestamp.month == today.month and
             timestamp.day == today.day)
 
+def updateStartTime(appt: Appointment, newStart: datetime, db):
+    print(newStart, type(newStart))
+    q = update(Appointment)\
+            .where(Appointment.id == appt.id)\
+            .values(start_time=newStart)\
+            .returning(Appointment.id, Appointment.start_time)
+    print('-'*60)
+    # print(q.compile(compile_kwargs={"literal_binds": True}))
+    print('-'*60)
+    res = db.execute(q)
+    result = res.first()
+    db.commit()
+    return result
+
 def markAsSoftDelete(appt: Appointment, db):
     q = update(Appointment)\
             .where(Appointment.id == appt.id)\
@@ -83,23 +97,24 @@ def mock_webhook(
         # TODO: Process appointment details as needed
         print('acuity:', appt_details)
         
+        res = ''
+        action_taken = ''
+        direction = ''
         if existing_appt:
-            if isToday(appt_details['datetime']):
-                # if changed to a different time today:
-            #     update appointment start time
-                pass
-            elif not isToday(appt_details['datetime']):
-                # else if changed to not today:
-                # mark as soft-deleted in database
+            if appt_details['canceled']:
+                action_taken = 'cancel'
+                direction =  'today->null'
                 res = markAsSoftDelete(existing_appt, db)
-                print(res)
-            
-            elif appt_details.canceled:
-                pass
-                # else if changed to canceled:
-                #     mark as soft-deleted in database
-            # else:
-            #     // update other changed properties as needed
+            elif isToday(appt_details['datetime']):
+                action_taken = 'reschedule'
+                direction = 'today->today'
+                res = updateStartTime(existing_appt, datetime.fromisoformat(appt_details['datetime']), db)
+            elif not isToday(appt_details['datetime']):
+                action_taken = 'reschedule'
+                direction = 'today->otherday'
+                res = markAsSoftDelete(existing_appt, db)
+            else:
+                raise Exception("existing appt - Shouldn't end up here")
         else:
             pass
         #     if changed to scheduled for today:
@@ -110,7 +125,15 @@ def mock_webhook(
         #     // decision point: either ignore or add with canceled status
         # else:
         #     // don't add to database (not relevant for today)
-        return {"status": "success", "message": f"Processed {action} for appointment {id}"}
+        return {
+            "status": "success", 
+            "data": { 
+                "action_taken": f'{action_taken}',
+                "direction": f'{direction}',
+                "appt_id": f'{id}',
+                "changed_fields": f"{res}"
+                }
+            }
             
     except Exception as e:
         # db.rollback()
