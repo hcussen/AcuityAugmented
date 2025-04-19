@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, Form, HTTPException
+from fastapi import APIRouter, Form, Depends, HTTPException
 from typing import Optional
-from app.config import settings
 from app.types import AcuityAppointment
 from sqlalchemy.orm import Session
+from sqlalchemy import select, update
 import requests
 from datetime import datetime 
 
@@ -46,10 +46,15 @@ def isToday(timestamp_string):
             timestamp.month == today.month and
             timestamp.day == today.day)
 
-def markAsSoftDelete(obj: Appointment, db):
-    obj.is_deleted = True
-    print(obj)
+def markAsSoftDelete(appt: Appointment, db):
+    q = update(Appointment)\
+            .where(Appointment.id == appt.id)\
+            .values(is_deleted=True)\
+            .returning(Appointment.id, Appointment.is_deleted)
+    res = db.execute(q)
+    result = res.first()
     db.commit()
+    return result
 
 
 @router.post("/mock")
@@ -61,21 +66,15 @@ def mock_webhook(
     db: Session = Depends(get_db)):
     try:
         # Check if appointment exists
-        print(f"Database URL being used: {settings.database_url}")
-        print(f"Looking for appointment id: {id}, type: {type(id)}")
-        try:
-            # Try direct integer comparison instead of filter_by
-            existing_appt = db.query(Appointment).filter(Appointment.id == int(id)).first()
-            print(f"Query result: {existing_appt}")
-        except Exception as e:
-            print(f"Error during database query: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        print(id)
+        q = select(Appointment).where(Appointment.id == id)
+        existing_appt = db.scalars(q).all()[0]
         
         print('existing:', existing_appt)
         # Fetch appointment details from Acuity API
         try:
             pass 
-            # appt_details: AcuityAppointment = acuity_client.get_appointment('1451596598')
+            appt_details: AcuityAppointment = acuity_client.get_appointment(id, mock=True)
         except requests.exceptions.RequestException as e:
             raise HTTPException(status_code=500, detail=f"Failed to fetch appointment details: {str(e)}")
         
@@ -83,15 +82,15 @@ def mock_webhook(
         print('acuity:', appt_details)
         
         if existing_appt:
-            pass
-            if isToday(appt_details.datetime):
+            if isToday(appt_details['datetime']):
                 # if changed to a different time today:
             #     update appointment start time
                 pass
-            elif not isToday(appt_details.datetime):
+            elif not isToday(appt_details['datetime']):
                 # else if changed to not today:
-            #     mark as soft-deleted in database
-                markAsSoftDelete(existing_appt, db)
+                # mark as soft-deleted in database
+                res = markAsSoftDelete(existing_appt, db)
+                print(res)
             
             elif appt_details.canceled:
                 pass
@@ -109,8 +108,9 @@ def mock_webhook(
         #     // decision point: either ignore or add with canceled status
         # else:
         #     // don't add to database (not relevant for today)
-        return {"status": "success", "message": f"Processed {action} for appointment {id}", "details": appt_details}
+        return {"status": "success", "message": f"Processed {action} for appointment {id}"}
             
     except Exception as e:
-        db.rollback()
+        # db.rollback()
+        print(str(e))
         return {"status": "error", "message": str(e)}

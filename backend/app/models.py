@@ -12,7 +12,7 @@ class Appointment(Base):
     last_name: Mapped[str] = mapped_column(String(30))
     start_time: Mapped[str] = mapped_column(DateTime)
     duration: Mapped[int] = mapped_column(Integer)
-    created_at: Mapped[str] = mapped_column(DateTime)
+    created_at: Mapped[str] = mapped_column(DateTime) # this is the created in Acuity time?
     deleted_at: Mapped[str] = mapped_column(DateTime, nullable=True)
     is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=True)
 
