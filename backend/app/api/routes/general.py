@@ -70,6 +70,7 @@ def get_schedule_diff(db: Session = Depends(get_db)):
 
         for i in range(hours_open):
             hourly_diffs[datetime.strftime(center_open + timedelta(hours=i), '%H:%M')] = {
+                "hour": datetime.strftime(center_open + timedelta(hours=i), '%H:%M'),
                 "added": [],
                 "deleted": []
             }
@@ -89,7 +90,7 @@ def get_schedule_diff(db: Session = Depends(get_db)):
                     "last_name": appt.last_name,
                 })
 
-        return hourly_diffs
+        return list(hourly_diffs.values())
 
     except Exception as e:
         print(e)
