@@ -1,18 +1,4 @@
-interface SimpleAppointment {
-  id: number
-  first_name: string
-  last_name: string
-}
-
-interface HourlyDiff {
-  hour: string
-  added: SimpleAppointment[]
-  deleted: SimpleAppointment[]
-}
-
-interface ScheduleDiffResponse {
-  differences: HourlyDiff[]
-}
+import { HourlyDiff } from "./types"
 
 export class ApiClient {
   private baseUrl: string
@@ -21,7 +7,7 @@ export class ApiClient {
     this.baseUrl = baseUrl
   }
 
-  async getScheduleDiff(): Promise<ScheduleDiffResponse> {
+  async getScheduleDiff(): Promise<HourlyDiff[]> {
     try {
       const response = await fetch(`${this.baseUrl}/schedule/diff`, {
         method: "GET",
