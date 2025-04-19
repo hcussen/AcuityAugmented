@@ -3,11 +3,15 @@ import logging
 
 
 class Settings(BaseSettings):
-    # # Add database URL for SQLAlchemy
+    # Add database URL for SQLAlchemy
     database_url: str = 'sqlite+pysqlite:///db.db'
 
     # You can add other settings as needed
     env_name: str = "dev"
+    
+    # Acuity API credentials
+    acuity_user_id: str
+    acuity_api_key: str
 
     model_config = SettingsConfigDict(env_file=".env")
 
