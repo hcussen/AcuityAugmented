@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Form, Depends, HTTPException
 from typing import Optional
+from app.types import AcuityAppointment
 from sqlalchemy.orm import Session
 import requests
 
@@ -28,20 +29,4 @@ async def handle_appt_changed(
     if action not in valid_actions:
         return {"status": "error", "message": f"Invalid action: {action}"}
     
-    try:
-        # Check if appointment exists
-        existing_appt = db.query(Appointment).filter_by(id=id).first()
-        
-        # Fetch appointment details from Acuity API
-        try:
-            appt_details = acuity_client.get_appointment('1451596598')
-        except requests.exceptions.RequestException as e:
-            raise HTTPException(status_code=500, detail=f"Failed to fetch appointment details: {str(e)}")
-        
-        # TODO: Process appointment details as needed
-        print(appt_details)
-        return {"status": "success", "message": f"Processed {action} for appointment {id}", "details": appt_details}
-            
-    except Exception as e:
-        db.rollback()
-        return {"status": "error", "message": str(e)}
+   return {"status": "well you got here at least"}

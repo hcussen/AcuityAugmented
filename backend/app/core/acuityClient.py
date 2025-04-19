@@ -1,6 +1,6 @@
 from base64 import b64encode
 import requests
-from typing import Dict, Any
+from app.types import AcuityAppointment
 
 from app.config import settings
 
@@ -12,7 +12,7 @@ class AcuityClient:
             'Authorization': f'Basic {auth}'
         }
     
-    def get_appointment(self, appointment_id: str) -> Dict[str, Any]:
+    def get_appointment(self, appointment_id: str) -> AcuityAppointment:
         """Fetch appointment details from Acuity API
         
         Args:

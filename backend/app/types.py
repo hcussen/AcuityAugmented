@@ -1,0 +1,41 @@
+from typing import TypedDict, List
+
+class AcuityAppointment(TypedDict):
+    id: int
+    firstName: str
+    lastName: str
+    phone: str
+    email: str
+    date: str
+    time: str
+    endTime: str
+    dateCreated: str
+    datetimeCreated: str
+    datetime: str
+    price: str
+    priceSold: str
+    paid: str
+    amountPaid: str
+    type: str
+    appointmentTypeID: int
+    classID: None
+    addonIDs: List[int]
+    category: str
+    duration: str
+    calendar: str
+    calendarID: int
+    certificate: None
+    confirmationPage: str
+    confirmationPagePaymentLink: str
+    location: str
+    notes: str
+    timezone: str
+    calendarTimezone: str
+    canceled: bool
+    canClientCancel: bool
+    canClientReschedule: bool
+    labels: None
+    forms: List[dict]
+    formsText: str
+    isVerified: bool
+    scheduledBy: str
