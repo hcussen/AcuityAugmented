@@ -10,8 +10,8 @@ class Appointment(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(30))
     created_at: Mapped[str] = mapped_column(DateTime)
-    deleted_at: Mapped[str] = mapped_column(DateTime)
-    is_deleted: Mapped[bool] = mapped_column(Boolean)
+    deleted_at: Mapped[str] = mapped_column(DateTime, nullable=True)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=True)
 
     def __repr__(self) -> str:
         return f"Appt #{self.id}: {self.name} created_at: {self.created_at} deleted: {self.is_deleted} at {self.deleted_at}"
