@@ -9,6 +9,8 @@ class Appointment(Base):
     __tablename__ = "appointments"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(30))
+    start_time: Mapped[str] = mapped_column(DateTime)
+    duration: Mapped[int] = mapped_column(Integer)
     created_at: Mapped[str] = mapped_column(DateTime)
     deleted_at: Mapped[str] = mapped_column(DateTime, nullable=True)
     is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=True)
