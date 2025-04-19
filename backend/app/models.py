@@ -17,4 +17,4 @@ class Appointment(Base):
     is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=True)
 
     def __repr__(self) -> str:
-        return f"Appt #{self.id}: {self.name} created_at: {self.created_at} deleted: {self.is_deleted} at {self.deleted_at}"
+        return f"Appt #{self.id}: {self.first_name} {self.last_name} created_at: {self.created_at} deleted: {self.is_deleted} at {self.deleted_at}"
