@@ -8,7 +8,8 @@ class Base(DeclarativeBase):
 class Appointment(Base):
     __tablename__ = "appointments"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(30))
+    first_name: Mapped[str] = mapped_column(String(30))
+    last_name: Mapped[str] = mapped_column(String(30))
     start_time: Mapped[str] = mapped_column(DateTime)
     duration: Mapped[int] = mapped_column(Integer)
     created_at: Mapped[str] = mapped_column(DateTime)
