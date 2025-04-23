@@ -18,14 +18,24 @@ export default function Home() {
   const [scheduleDiff, setScheduleDiff] = useState<Array<HourlyDiff> | null>(
     null
   )
+  const [schedule, setSchedule] = useState<any>(null)
+
+  const fetchSchedule = async () => {
+    try {
+      const scheduleData = await apiClient.getSchedule()
+      setSchedule(scheduleData)
+    } catch (error) {
+      console.error("Error fetching schedule:", error)
+    }
+  }
 
   useEffect(() => {
     const fetchDiff = async () => {
       try {
-        const data = await apiClient.getScheduleDiff()
-        setScheduleDiff(data)
+        const diffData = await apiClient.getScheduleDiff()
+        setScheduleDiff(diffData)
       } catch (error) {
-        console.error("Error fetching schedule diff:", error)
+        console.error("Error fetching diff:", error)
       }
     }
 
@@ -42,7 +52,15 @@ export default function Home() {
   return (
     <div className="min-h-screen p-8 font-[family-name:var(--font-geist-sans)]">
       <main className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Today's Schedule Changes</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Today's Schedule Changes</h1>
+          <button
+            onClick={fetchSchedule}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            Fetch Schedule
+          </button>
+        </div>
         <Table>
           <TableHeader>
             <TableRow>
