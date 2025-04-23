@@ -9,7 +9,7 @@ import traceback
 
 from app.config import settings
 from app.database import get_db
-from app.models import Appointment
+from app.models import Appointment, Event, EventAction
 
 router = APIRouter(
     prefix="",
@@ -71,13 +71,18 @@ def get_schedule_diff(db: Session = Depends(get_db)):
         today_day_of_week = now.weekday()
         # today_day_of_week = 1 # lock at tuesday for testing
 
-        # Get all appointments for today
-        today_appointments = db.query(Appointment).filter(
+        # Get all events for today
+        today_events = db.query(
+            Event,
+            Appointment.first_name,
+            Appointment.last_name,
+            Appointment.start_time,
+        ).join(Event.appointment).filter(
             and_(
-                Appointment.start_time >= today_start,
-                Appointment.start_time < today_end
+                Event.created_at >= today_start,
+                Event.created_at < today_end
             )
-        ).order_by(Appointment.start_time).all()
+        ).order_by(Event.created_at).all()
 
         # Group appointments by hour
         hourly_diffs: Dict[str, Dict[str, List[dict]]] = {}
@@ -93,23 +98,44 @@ def get_schedule_diff(db: Session = Depends(get_db)):
                 "deleted": []
             }
         
-        for appt in today_appointments:
-            hour = appt.start_time.strftime('%H:%M')
+        for event, first_name, last_name, start_time in today_events:
+            hour = event.new_time.strftime('%H:%M')
             if hour not in hourly_diffs.keys():
-                print(f'skipping {appt.id} at {hour}')
+                print(f'skipping {event.id} at {hour}')
                 continue
-            if appt.is_canceled:
-                hourly_diffs[hour]["deleted"].append({
-                    "id": appt.id,
-                    "first_name": appt.first_name,
-                    "last_name": appt.last_name,
+            match event.action:
+                case EventAction.schedule:
+                    hourly_diffs[hour]["added"].append({
+                        "id": event.appointment_id,
+                        "first_name": first_name,
+                        "last_name": last_name,
                     })
-            else:   
-                hourly_diffs[hour]["added"].append({
-                    "id": appt.id,
-                    "first_name": appt.first_name,
-                    "last_name": appt.last_name,
-                })
+                case EventAction.cancel:
+                    hourly_diffs[hour]["deleted"].append({
+                        "id": event.appointment_id,
+                        "first_name": first_name,
+                        "last_name": last_name,
+                    })
+                case EventAction.reschedule_same_day:
+                    old_hour = event.old_time.strftime('%H:%M')
+                    hourly_diffs[old_hour]["deleted"].append({
+                        "id": event.appointment_id,
+                        "first_name": first_name,
+                        "last_name": last_name,
+                    })
+                    hourly_diffs[hour]["added"].append({
+                        "id": event.appointment_id,
+                        "first_name": first_name,
+                        "last_name": last_name,
+                    })
+                case EventAction.reschedule_incoming:
+                    hourly_diffs[hour]["added"].append({
+                        "id": event.appointment_id,
+                        "first_name": first_name,
+                        "last_name": last_name,
+                    })
+                case _:
+                    print(f"Unknown action: {event.action} for id {event.id}")
 
         return list(hourly_diffs.values())
 

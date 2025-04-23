@@ -35,6 +35,24 @@ export default function Home() {
     }))
   }, [schedule])
 
+  const nonDummyByHour = useMemo(() => {
+    if (!schedule) return null
+
+    const hourCounts = new Map<string, number>()
+    schedule
+      .filter((appointment) => appointment.first_name !== "Dummy")
+      .forEach((appointment) => {
+        const hour = appointment.start_time.getHours().toString()
+        const existingCount = hourCounts.get(hour) || 0
+        hourCounts.set(hour, existingCount + 1)
+      })
+
+    return Array.from(hourCounts.entries()).map(([hour, count]) => ({
+      hour,
+      count,
+    }))
+  }, [schedule])
+
   const fetchSchedule = async () => {
     try {
       const scheduleData = await apiClient.getSchedule()
@@ -76,7 +94,8 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    console.log(schedule)
+    console.log(appointmentsByHour)
+    console.log(nonDummyByHour)
   }, [schedule])
 
   return (
@@ -155,15 +174,17 @@ export default function Home() {
                 <TableRow>
                   <TableHead>Hour</TableHead>
                   <TableHead>Count</TableHead>
+                  <TableHead>Non-Dummy Count</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {appointmentsByHour?.map((hourData) => (
+                {appointmentsByHour?.map((hourData, idx) => (
                   <TableRow key={hourData.hour}>
                     <TableCell className="font-medium">
                       {hourData.hour}
                     </TableCell>
                     <TableCell>{hourData.count}</TableCell>
+                    <TableCell>{nonDummyByHour[idx].count}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
