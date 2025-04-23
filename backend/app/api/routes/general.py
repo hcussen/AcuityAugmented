@@ -42,6 +42,24 @@ def create_appointment(appt: AppointmentCreate, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.get("/schedule")
+def get_schedule(db: Session = Depends(get_db)) -> List[Appointment]:
+    try:
+        # Get current date boundaries
+        now = datetime.now() 
+        today_start = datetime(now.year, now.month, now.day)
+        today_end = today_start + timedelta(days=1)
+
+        return db.query(Appointment).filter(
+            and_(
+                Appointment.start_time >= today_start,
+                Appointment.start_time < today_end
+            )
+        ).order_by(Appointment.start_time).all()
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @router.get("/schedule/diff")
 def get_schedule_diff(db: Session = Depends(get_db)):
     try:
