@@ -22,17 +22,23 @@ export default function Home() {
   const appointmentsByHour = useMemo(() => {
     if (!schedule) return null
 
-    const hourCounts = new Map<string, number>()
+    // Create a map where keys are hours and values are arrays of appointments
+    const hourAppointments = new Map<string, Array<any>>()
+
     schedule.forEach((appointment) => {
       const hour = appointment.start_time.getHours().toString()
-      const existingCount = hourCounts.get(hour) || 0
-      hourCounts.set(hour, existingCount + 1)
+      const existingAppointments = hourAppointments.get(hour) || []
+      existingAppointments.push(appointment)
+      hourAppointments.set(hour, existingAppointments)
     })
 
-    return Array.from(hourCounts.entries()).map(([hour, count]) => ({
-      hour,
-      count,
-    }))
+    // Convert the map to the desired format
+    return Array.from(hourAppointments.entries()).map(
+      ([hour, appointments]) => ({
+        hour,
+        appointments,
+      })
+    )
   }, [schedule])
 
   const nonDummyByHour = useMemo(() => {
@@ -94,6 +100,7 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
+    console.log(JSON.stringify(schedule))
     console.log(appointmentsByHour)
     console.log(nonDummyByHour)
   }, [schedule])
@@ -173,6 +180,7 @@ export default function Home() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Hour</TableHead>
+                  <TableHead>Names</TableHead>
                   <TableHead>Count</TableHead>
                   <TableHead>Non-Dummy Count</TableHead>
                 </TableRow>
@@ -183,8 +191,17 @@ export default function Home() {
                     <TableCell className="font-medium">
                       {hourData.hour}
                     </TableCell>
-                    <TableCell>{hourData.count}</TableCell>
-                    <TableCell>{nonDummyByHour[idx].count}</TableCell>
+                    <TableCell>
+                      {hourData.appointments.map((appt) => (
+                        <p key={appt.id}>
+                          {appt.first_name} {appt.last_name}
+                        </p>
+                      ))}
+                    </TableCell>
+                    <TableCell>{hourData.appointments.length}</TableCell>
+                    <TableCell>
+                      {nonDummyByHour && nonDummyByHour[idx].count}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
