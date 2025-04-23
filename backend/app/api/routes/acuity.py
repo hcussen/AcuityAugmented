@@ -9,10 +9,9 @@ from datetime import datetime
 import traceback
 from typing import List 
 from app.core.acuityClient import acuity_client
-from app.types import AcuityAppointment
+from app.core.type_conversion import acuity_to_appointment
 from app.database import get_db
 from app.models import Appointment, Snapshot
-from app.core.apptActions import isToday, createNewAppointment, updateStartTime, markAsSoftDelete
 from sqlalchemy.dialects.sqlite import JSON
 
 
@@ -24,16 +23,40 @@ router = APIRouter(
 @router.get("/snapshot")
 def take_snapshot(db: Session = Depends(get_db)):
     try: 
-        appointments = acuity_client.get_appointments(limit=5)
+        appointments = acuity_client.get_appointments()
+        
+        # Create snapshot record
         snapshot = Snapshot(
-            dump=appointments  # SQLAlchemy will handle JSON serialization via the JSON type
+            dump=appointments
         )
         db.add(snapshot)
+        
+        # Create individual appointment records
+        for appt_data in appointments:
+            # Convert to AcuityAppointment type for validation
+            acuity_appt = AcuityAppointment(**appt_data)
+            
+            # Check if appointment already exists
+            existing_appt = db.query(Appointment).filter(
+                Appointment.acuity_id == acuity_appt.id
+            ).first()
+            
+            if existing_appt:
+                # Update existing appointment if needed
+                existing_appt.start_time = datetime.fromisoformat(acuity_appt.datetime)
+                existing_appt.is_canceled = acuity_appt.canceled
+                existing_appt.last_modified_here = datetime.now()
+            else:
+                # Create new appointment
+                new_appt = acuity_to_appointment(acuity_appt)
+                db.add(new_appt)
+
         db.commit()
         db.refresh(snapshot)
-        return {"message": "Snapshot taken successfully", "count": len(appointments)}
+        return {"message": "Snapshot and appointments saved successfully", "count": len(appointments)}
 
     except Exception as e:
+        db.rollback()  # Rollback any changes if there's an error
         import traceback
         stack_trace = traceback.format_exc()
         raise HTTPException(status_code=400, detail={"error": str(e), "stack_trace": stack_trace})
