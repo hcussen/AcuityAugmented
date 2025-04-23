@@ -14,7 +14,7 @@ class Base(DeclarativeBase):
 class Snapshot(Base):
     __tablename__ = 'snapshots'
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=str(uuid.uuid4()))
-    timestamp: Mapped[datetime] = mapped_column(DateTime)
+    timestamp: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     dump: Mapped[List[AcuityAppointment]] = mapped_column(JSON)
 
 class Appointment(Base):

@@ -23,7 +23,6 @@ router = APIRouter(
 
 @router.get("/snapshot")
 def take_snapshot(db: Session = Depends(get_db)):
-
     try: 
         appointments: List[AcuityAppointment] = acuity_client.get_appointments()
         snapshot = Snapshot(
@@ -31,6 +30,7 @@ def take_snapshot(db: Session = Depends(get_db)):
         )
         db.add(snapshot)
         db.commit()
+        db.refresh(snapshot)
         return {"message": "Snapshot taken successfully", "count": len(appointments)}
 
     except Exception as e:
