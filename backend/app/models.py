@@ -7,19 +7,20 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.schema import  ForeignKey
 from sqlalchemy.dialects.sqlite import JSON
 from app.types import AcuityAppointment
+import json
 
 class Base(DeclarativeBase):
     pass
 
 class Snapshot(Base):
     __tablename__ = 'snapshots'
-    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=str(uuid.uuid4()))
-    timestamp: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    dump: Mapped[List[AcuityAppointment]] = mapped_column(JSON)
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    dump: Mapped[dict] = mapped_column(JSON)
 
 class Appointment(Base):
     __tablename__ = "appointments"
-    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=str(uuid.uuid4()))
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     acuity_id: Mapped[int] = mapped_column(Integer) #fk to Acuity ID
     first_name: Mapped[str] = mapped_column(String(30))
     last_name: Mapped[str] = mapped_column(String(30))
@@ -32,8 +33,8 @@ class Appointment(Base):
     is_canceled: Mapped[bool] = mapped_column(Boolean, nullable=True)
     
     # server metadata
-    created_at_here: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    last_modified_here: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    created_at_here: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    last_modified_here: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now)
 
     events: Mapped[List["Event"]] = relationship(
         back_populates='appointment', 
@@ -53,7 +54,7 @@ class EventAction(enum.Enum):
 
 class Event(Base):
     __tablename__ = "events"
-    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=str(uuid.uuid4()))
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     action: Mapped[EventAction] = mapped_column(Enum(EventAction))
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 

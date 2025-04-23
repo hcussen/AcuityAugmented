@@ -82,7 +82,8 @@ class AcuityClient:
             'minDate': minDate,
             'maxDate': maxDate
         }
-
+        if limit:
+            params['max'] = limit
         response = requests.get(
             f"{self.base_url}/appointments",
             headers=self.headers,
@@ -90,6 +91,5 @@ class AcuityClient:
         )
         response.raise_for_status()  # Raise exception for non-200 status codes
         return response.json()
-
 # Create a singleton instance
 acuity_client = AcuityClient()

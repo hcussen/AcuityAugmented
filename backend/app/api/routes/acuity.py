@@ -13,7 +13,7 @@ from app.types import AcuityAppointment
 from app.database import get_db
 from app.models import Appointment, Snapshot
 from app.core.apptActions import isToday, createNewAppointment, updateStartTime, markAsSoftDelete
-import json 
+from sqlalchemy.dialects.sqlite import JSON
 
 
 router = APIRouter(
@@ -24,9 +24,9 @@ router = APIRouter(
 @router.get("/snapshot")
 def take_snapshot(db: Session = Depends(get_db)):
     try: 
-        appointments: List[AcuityAppointment] = acuity_client.get_appointments()
+        appointments = acuity_client.get_appointments(limit=5)
         snapshot = Snapshot(
-            dump=json.dumps(appointments)
+            dump=appointments  # SQLAlchemy will handle JSON serialization via the JSON type
         )
         db.add(snapshot)
         db.commit()
@@ -34,4 +34,6 @@ def take_snapshot(db: Session = Depends(get_db)):
         return {"message": "Snapshot taken successfully", "count": len(appointments)}
 
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        import traceback
+        stack_trace = traceback.format_exc()
+        raise HTTPException(status_code=400, detail={"error": str(e), "stack_trace": stack_trace})
