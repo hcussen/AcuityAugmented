@@ -77,6 +77,9 @@ def get_schedule_diff(db: Session = Depends(get_db)):
         
         for appt in today_appointments:
             hour = appt.start_time.strftime('%H:%M')
+            if hour not in hourly_diffs.keys():
+                print(f'skipping {appt.id} at {hour}')
+                continue
             if appt.is_deleted:
                 hourly_diffs[hour]["deleted"].append({
                     "id": appt.id,
