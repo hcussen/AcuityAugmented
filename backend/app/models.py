@@ -6,39 +6,43 @@ from sqlalchemy import String, DateTime, Integer, Boolean, Uuid, func, Enum
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.schema import  ForeignKey
 from sqlalchemy.dialects.sqlite import JSON
+from app.types import AcuityAppointment
 
 class Base(DeclarativeBase):
     pass
 
 class Snapshot(Base):
     __tablename__ = 'snapshots'
-    id: Mapped[str] = mapped_column(Uuid, primary_key=True, server_default=str(uuid.uuid4()))
-    timestamp: Mapped[str] = mapped_column(DateTime)
-    dump: Mapped[str] = mapped_column(JSON)
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=str(uuid.uuid4()))
+    timestamp: Mapped[datetime] = mapped_column(DateTime)
+    dump: Mapped[List[AcuityAppointment]] = mapped_column(JSON)
 
 class Appointment(Base):
     __tablename__ = "appointments"
-    id: Mapped[uuid] = mapped_column(Uuid, primary_key=True, server_default=str(uuid.uuid4()))
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=str(uuid.uuid4()))
     acuity_id: Mapped[int] = mapped_column(Integer) #fk to Acuity ID
     first_name: Mapped[str] = mapped_column(String(30))
     last_name: Mapped[str] = mapped_column(String(30))
 
-    start_time: Mapped[str] = mapped_column(DateTime)
-    duration: Mapped[int] = mapped_column(Integer, server_default="60")
+    start_time: Mapped[datetime] = mapped_column(DateTime)
+    duration: Mapped[int] = mapped_column(Integer, server_default="60") # in minutes
 
-    acuity_created_at: Mapped[str] = mapped_column(DateTime)
-    acuity_deleted_at: Mapped[str] = mapped_column(DateTime, nullable=True)
+    acuity_created_at: Mapped[datetime] = mapped_column(DateTime)
+    acuity_deleted_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     is_canceled: Mapped[bool] = mapped_column(Boolean, nullable=True)
     
     # server metadata
     created_at_here: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     last_modified_here: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 
-    events: Mapped[List["Event"]] = relationship(back_populates='appointments', cascade="all, delete",
-        passive_deletes=True,)
+    events: Mapped[List["Event"]] = relationship(
+        back_populates='appointment', 
+        cascade="all, delete",
+        passive_deletes=True,
+    )
 
     def __repr__(self) -> str:
-        return f"Appt #{self.id}: {self.first_name} {self.last_name} is_deleted: {self.is_deleted} acuity: {self.acuity_created_at}"
+        return f"Appt #{self.id}: {self.first_name} {self.last_name} is_canceled: {self.is_canceled} acuity: {self.acuity_created_at}"
 
 class EventAction(enum.Enum):
     schedule = 0
@@ -49,18 +53,19 @@ class EventAction(enum.Enum):
 
 class Event(Base):
     __tablename__ = "events"
-    id: Mapped[str] = mapped_column(Uuid, primary_key=True, server_default=str(uuid.uuid4()))
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=str(uuid.uuid4()))
     action: Mapped[EventAction] = mapped_column(Enum(EventAction))
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
-    old_time: Mapped[str] = mapped_column(DateTime, nullable=True)
-    new_time: Mapped[str] = mapped_column(DateTime, nullable=True)
+    old_time: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    new_time: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
 
-    appointment_id: Mapped[int] = mapped_column(
-        Integer, 
+    appointment_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, 
         ForeignKey("appointments.id", 
-        ondelete="CASCADE"))
+        ondelete="CASCADE")
+    )
     appointment: Mapped["Appointment"] = relationship(back_populates='events')
 
     
