@@ -1,17 +1,8 @@
-from fastapi import APIRouter, Form, Depends, HTTPException
-from typing import Optional
 from app.types import AcuityAppointment
-from sqlalchemy.orm import Session
-from sqlalchemy import select, update
-import requests
+from sqlalchemy import update
 from datetime import datetime 
-
-import traceback
-
-from app.core.acuityClient import acuity_client
-
-from app.database import get_db
 from app.models import Appointment
+from app.core.type_conversion import acuity_to_appointment
 
 def isToday(timestamp_string):
     '''takes in a date in the format 2025-06-03T19:00:00-0600'''
@@ -27,15 +18,8 @@ def isToday(timestamp_string):
             timestamp.day == today.day)
 
 def createNewAppointment(appt: AcuityAppointment, db):
-    db_appointment = Appointment(
-        id=appt['id'],
-        first_name=appt['firstName'],
-        last_name=appt['lastName'],
-        start_time=datetime.fromisoformat(appt['datetime']),
-        duration=appt['duration'],
-        acuity_created_at=datetime.fromisoformat(appt['datetimeCreated']),
-        is_deleted=appt['canceled']
-    )
+    newAppt = AcuityAppointment(**appt)
+    db_appointment = acuity_to_appointment(newAppt)
     db.add(db_appointment)
     db.commit()
     db.refresh(db_appointment)

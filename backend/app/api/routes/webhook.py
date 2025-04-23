@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 import requests
 from datetime import datetime 
+from app.config import settings
 
 import traceback
 
@@ -57,7 +58,17 @@ async def handle_appt_changed(
         old_time = None
         new_time = None
         event = None
-        if appt_details['canceled']:
+        if not existing_appt:
+            old_time = None
+            new_time = datetime.fromisoformat(appt_details['datetime'])
+            res = createNewAppointment(appt_details, db)
+            event = Event(
+                action=EventAction.schedule,
+                old_time=old_time,
+                new_time=new_time,
+                appointment_id=res.id
+            )
+        elif appt_details['canceled']:
             old_time = existing_appt.start_time
             res = markAsSoftDelete(existing_appt, db)
             event = Event(
