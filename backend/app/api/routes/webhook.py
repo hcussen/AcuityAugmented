@@ -78,16 +78,7 @@ async def handle_appt_changed(
             )            
         elif isToday(appt_details['datetime']):
             new_time = datetime.fromisoformat(appt_details['datetime'])
-            if not existing_appt:
-                old_time = None
-                res = createNewAppointment(new_time, db)
-                event = Event(
-                    action=EventAction.schedule,
-                    old_time=old_time,
-                    new_time=new_time,
-                    appointment_id=res.id
-                )
-            elif isToday(existing_appt.start_time):
+            if isToday(existing_appt.start_time):
                 old_time = existing_appt.start_time
                 res = updateStartTime(existing_appt, new_time, db)
                 event = Event(
