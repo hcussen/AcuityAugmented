@@ -24,7 +24,7 @@ class AppointmentCreate(BaseModel):
     duration: int
     acuity_created_at: datetime
 
-@router.post("/appointments")
+@router.post("/appointment")
 def create_appointment(appt: AppointmentCreate, db: Session = Depends(get_db)):
     try:
         db_appointment = Appointment(

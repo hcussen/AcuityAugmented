@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     # Acuity API credentials
     acuity_user_id: str
     acuity_api_key: str
+    calendar_id: str
 
     # Center Hours (start, end)
     hours_open: dict = {
