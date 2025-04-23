@@ -21,9 +21,9 @@ export enum EventAction {
 export interface Event {
   id: string // UUID in string format
   action: EventAction
-  created_at: string // ISO datetime string
-  old_time: string | null // ISO datetime string
-  new_time: string | null // ISO datetime string
+  created_at: Date // ISO datetime string
+  old_time: Date | null // ISO datetime string
+  new_time: Date | null // ISO datetime string
   appointment_id: string // UUID in string format
   appointment?: Appointment // Optional since we might not always include the related appointment
 }
@@ -33,12 +33,12 @@ export interface Appointment {
   acuity_id: number
   first_name: string
   last_name: string
-  start_time: string // ISO datetime string
+  start_time: Date // ISO datetime string
   duration: number
-  acuity_created_at: string // ISO datetime string
-  acuity_deleted_at: string | null // ISO datetime string
+  acuity_created_at: Date // ISO datetime string
+  acuity_deleted_at: Date | null // ISO datetime string
   is_canceled: boolean | null
-  created_at_here: string // ISO datetime string
-  last_modified_here: string // ISO datetime string
+  created_at_here: Date // ISO datetime string
+  last_modified_here: Date // ISO datetime string
   events?: Event[] // Optional since we might not always include related events
 }

@@ -43,7 +43,7 @@ def create_appointment(appt: AppointmentCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/schedule")
-def get_schedule(db: Session = Depends(get_db)) -> List[Appointment]:
+def get_schedule(db: Session = Depends(get_db)):
     try:
         # Get current date boundaries
         now = datetime.now() 
@@ -98,7 +98,7 @@ def get_schedule_diff(db: Session = Depends(get_db)):
             if hour not in hourly_diffs.keys():
                 print(f'skipping {appt.id} at {hour}')
                 continue
-            if appt.is_deleted:
+            if appt.is_canceled:
                 hourly_diffs[hour]["deleted"].append({
                     "id": appt.id,
                     "first_name": appt.first_name,
