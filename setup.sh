@@ -33,7 +33,7 @@ tell application "iTerm2"
         # Set up Pane B (git management pane - top right)
         tell paneB
             write text "cd \"${PROJECT_DIR}\""
-            write text "# Git management pane"
+            write text "ngrok http --url=informed-easily-oryx.ngrok-free.app 8000"
         end tell
         
         # Now split the bottom pane vertically to create Panes C and D
