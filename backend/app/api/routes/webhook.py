@@ -11,7 +11,7 @@ import traceback
 from app.core.acuityClient import acuity_client
 
 from app.database import get_db
-from app.models import Appointment
+from app.models import Appointment, Event, EventAction
 from app.core.apptActions import isToday, createNewAppointment, updateStartTime, markAsSoftDelete
 
 router = APIRouter(
@@ -29,6 +29,9 @@ async def handle_appt_changed(
     db: Session = Depends(get_db)
 ):
     print(f"Received webhook: Action={action}, ID={id}, Calendar={calendarID}, Type={appointmentTypeID}")
+
+    if calendarID != settings.calendar_id:
+        return {"status": "passed", "message": f"Invalid calendar ID: {calendarID}"}
     
     # Validate the action type
     valid_actions = {"scheduled", "rescheduled", "canceled", "changed", "order.completed"}
@@ -36,6 +39,7 @@ async def handle_appt_changed(
         return {"status": "error", "message": f"Invalid action: {action}"}
     
     try:
+        
         # Check if appointment exists
         try: 
             q = select(Appointment).where(Appointment.id == id)
@@ -49,49 +53,67 @@ async def handle_appt_changed(
         except requests.exceptions.RequestException as e:
             raise HTTPException(status_code=500, detail=f"Failed to fetch appointment details: {str(e)}")
         
-        res = ''
-        action_taken = ''
-        direction = ''
-        if not existing_appt:
-            if isToday(appt_details['datetime']) and not appt_details['canceled']:
-                action_taken = 'schedule'
-                direction = 'null->today'
-                res = createNewAppointment(appt_details, db)
-            elif isToday(appt_details['datetime']) and appt_details['canceled']:
-                # else if changed to canceled and original time was today:
-                #   decision point: either ignore or add with canceled status
-                #   this is relevant if you are starting from no appts
-                action_taken = 'cancel'
-                direction = "today->null"
-                res = createNewAppointment(appt_details, db)
+
+        old_time = None
+        new_time = None
+        event = None
+        if appt_details['canceled']:
+            old_time = existing_appt.start_time
+            res = markAsSoftDelete(existing_appt, db)
+            event = Event(
+                action=EventAction.cancel,
+                old_time=old_time,
+                appointment_id=existing_appt.id
+            )            
+        elif isToday(appt_details['datetime']):
+            new_time = datetime.fromisoformat(appt_details['datetime'])
+            if not existing_appt:
+                old_time = None
+                res = createNewAppointment(new_time, db)
+                event = Event(
+                    action=EventAction.schedule,
+                    old_time=old_time,
+                    new_time=new_time,
+                    appointment_id=res.id
+                )
+            elif isToday(existing_appt.start_time):
+                old_time = existing_appt.start_time
+                res = updateStartTime(existing_appt, new_time, db)
+                event = Event(
+                    action=EventAction.reschedule_same_day,
+                    old_time=old_time,
+                    new_time=new_time,
+                    appointment_id=existing_appt.id
+                )
             else:
-                action_taken = 'ignored'
-                direction = 'null->null'
-                res = {'datetime': appt_details['datetime'], 'canceled': appt_details['canceled'] }
+                old_time = existing_appt.start_time
+                new_time = datetime.fromisoformat(appt_details['datetime'])
+                res = markAsSoftDelete(existing_appt, db)
+                event = Event(
+                    action=EventAction.reschedule_incoming,
+                    old_time=old_time,
+                    new_time=new_time,
+                    appointment_id=existing_appt.id
+                )
+        elif not isToday(appt_details['datetime']):
+            old_time = existing_appt.start_time
+            new_time = datetime.fromisoformat(appt_details['datetime'])
+            res = markAsSoftDelete(existing_appt, db)
+            event = Event(
+                action=EventAction.reschedule_outgoing,
+                old_time=old_time,
+                new_time=new_time,
+                appointment_id=existing_appt.id
+            )
         else:
-            if appt_details['canceled']:
-                action_taken = 'cancel'
-                direction =  'today->null'
-                res = markAsSoftDelete(existing_appt, db)
-            elif isToday(appt_details['datetime']):
-                action_taken = 'reschedule'
-                direction = 'today->today'
-                res = updateStartTime(existing_appt, datetime.fromisoformat(appt_details['datetime']), db)
-            elif not isToday(appt_details['datetime']):
-                action_taken = 'reschedule'
-                direction = 'today->otherday'
-                res = markAsSoftDelete(existing_appt, db)
-            else:
-                raise Exception("existing appt - Shouldn't end up here")
+            raise Exception("existing appt - Shouldn't end up here")
+        
+        db.add(event)
+        db.commit()
         
         return {
             "status": "success", 
-            "data": { 
-                "action_taken": f'{action_taken}',
-                "direction": f'{direction}',
-                "appt_id": f'{id}',
-                "changed_fields": f"{res}"
-                }
+            "data": event
             }
             
     except Exception as e:
