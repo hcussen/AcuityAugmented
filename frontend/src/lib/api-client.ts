@@ -1,4 +1,4 @@
-import { SimpleAppointment, HourlyDiff } from "./types"
+import { Appointment, HourlyDiff } from "./types"
 
 export class ApiClient {
   private baseUrl: string
@@ -27,7 +27,7 @@ export class ApiClient {
     }
   }
 
-  async getSchedule(): Promise<SimpleAppointment[]> {
+  async getSchedule(): Promise<Appointment[]> {
     try {
       const response = await fetch(`${this.baseUrl}/schedule`, {
         method: "GET",
