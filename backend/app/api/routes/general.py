@@ -46,12 +46,12 @@ def create_appointment(appt: AppointmentCreate, db: Session = Depends(get_db)):
 def get_schedule_diff(db: Session = Depends(get_db)):
     try:
         # Get current date boundaries
-        # TODO: Use current time instead of fixed timestamp
-        now = datetime(2025, 4, 19, 12, 25, 27)  # Using provided timestamp
+        # now = datetime(2025, 4, 19, 12, 25, 27)  # Using provided timestamp
+        now = datetime.now() 
         today_start = datetime(now.year, now.month, now.day)
         today_end = today_start + timedelta(days=1)
         today_day_of_week = now.weekday()
-        today_day_of_week = 1 # lock at tuesday for testing
+        # today_day_of_week = 1 # lock at tuesday for testing
 
         # Get all appointments for today
         today_appointments = db.query(Appointment).filter(
@@ -77,6 +77,9 @@ def get_schedule_diff(db: Session = Depends(get_db)):
         
         for appt in today_appointments:
             hour = appt.start_time.strftime('%H:%M')
+            if hour not in hourly_diffs.keys():
+                print(f'skipping {appt.id} at {hour}')
+                continue
             if appt.is_deleted:
                 hourly_diffs[hour]["deleted"].append({
                     "id": appt.id,
