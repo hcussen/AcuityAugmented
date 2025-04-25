@@ -91,5 +91,6 @@ class AcuityClient:
         )
         response.raise_for_status()  # Raise exception for non-200 status codes
         return response.json()
-# Create a singleton instance
-acuity_client = AcuityClient()
+# Create a dependency provider
+def get_acuity_client() -> AcuityClient:
+    return AcuityClient()

@@ -8,7 +8,7 @@ from datetime import datetime
 
 import traceback
 from typing import List 
-from app.core.acuityClient import acuity_client
+from app.core.acuityClient import get_acuity_client, AcuityClient
 from app.core.type_conversion import acuity_to_appointment
 from app.database import get_db
 from app.models import Appointment, Snapshot
@@ -21,9 +21,9 @@ router = APIRouter(
 )
 
 @router.get("/snapshot")
-def take_snapshot(db: Session = Depends(get_db)):
+def take_snapshot(db: Session = Depends(get_db), acuity: AcuityClient = Depends(get_acuity_client)):
     try: 
-        appointments = acuity_client.get_appointments()
+        appointments = acuity.get_appointments()
         
         # Create snapshot record
         snapshot = Snapshot(
