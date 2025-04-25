@@ -26,24 +26,20 @@ def createNewAppointment(appt: AcuityAppointment, db):
     return db_appointment
 
 def updateStartTime(appt: Appointment, newStart: datetime, db):
-    print(newStart, type(newStart))
     q = update(Appointment)\
             .where(Appointment.id == appt.id)\
             .values(start_time=newStart)\
             .returning(Appointment.id, Appointment.start_time)
-    print('-'*60)
-    # print(q.compile(compile_kwargs={"literal_binds": True}))
-    print('-'*60)
     res = db.execute(q)
     result = res.first()
     db.commit()
     return result
 
-def markAsSoftDelete(appt: Appointment, db):
+def markAsCanceled(appt: Appointment, db):
     q = update(Appointment)\
             .where(Appointment.id == appt.id)\
-            .values(is_deleted=True)\
-            .returning(Appointment.id, Appointment.is_deleted)
+            .values(is_canceled=True)\
+            .returning(Appointment.id, Appointment.is_canceled)
     res = db.execute(q)
     result = res.first()
     db.commit()
