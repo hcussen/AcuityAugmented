@@ -13,7 +13,7 @@ from app.core.acuityClient import acuity_client
 
 from app.database import get_db
 from app.models import Appointment, Event, EventAction
-from app.core.apptActions import isToday, createNewAppointment, updateStartTime, markAsSoftDelete
+from app.core.apptActions import isToday, createNewAppointment, updateStartTime, markAsCanceled
 
 router = APIRouter(
     prefix="/webhook",
@@ -59,6 +59,8 @@ async def handle_appt_changed(
         new_time = None
         event = None
         if not existing_appt:
+            if not isToday(appt_details['datetime']):
+                return {"status": "passed", "message": f"Appt {id} doesn't deal with today"}
             old_time = None
             new_time = datetime.fromisoformat(appt_details['datetime'])
             res = createNewAppointment(appt_details, db)
@@ -70,7 +72,7 @@ async def handle_appt_changed(
             )
         elif appt_details['canceled']:
             old_time = existing_appt.start_time
-            res = markAsSoftDelete(existing_appt, db)
+            res = markAsCanceled(existing_appt, db)
             event = Event(
                 action=EventAction.cancel,
                 old_time=old_time,
@@ -90,7 +92,7 @@ async def handle_appt_changed(
             else:
                 old_time = existing_appt.start_time
                 new_time = datetime.fromisoformat(appt_details['datetime'])
-                res = markAsSoftDelete(existing_appt, db)
+                res = markAsCanceled(existing_appt, db)
                 event = Event(
                     action=EventAction.reschedule_incoming,
                     old_time=old_time,
@@ -100,7 +102,7 @@ async def handle_appt_changed(
         elif not isToday(appt_details['datetime']):
             old_time = existing_appt.start_time
             new_time = datetime.fromisoformat(appt_details['datetime'])
-            res = markAsSoftDelete(existing_appt, db)
+            res = updateStartTime(existing_appt, new_time, db)
             event = Event(
                 action=EventAction.reschedule_outgoing,
                 old_time=old_time,
