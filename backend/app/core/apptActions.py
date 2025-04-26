@@ -38,9 +38,9 @@ def updateStartTime(appt: Appointment, newStart: datetime, db):
 def markAsCanceled(appt: Appointment, db):
     q = update(Appointment)\
             .where(Appointment.id == appt.id)\
-            .values(is_canceled=True)\
-            .returning(Appointment.id, Appointment.is_canceled)
-    res = db.execute(q)
-    result = res.first()
+            .values(is_canceled=True)
+    db.execute(q)
     db.commit()
-    return result
+    # Refresh the appointment object
+    db.refresh(appt)
+    return appt

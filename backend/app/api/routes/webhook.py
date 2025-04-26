@@ -42,7 +42,7 @@ async def handle_appt_changed(
         
         # Check if appointment exists
         try: 
-            q = select(Appointment).where(Appointment.id == id)
+            q = select(Appointment).where(Appointment.acuity_id == id)
             existing_appt = db.scalars(q).all()[0]
         except:
             existing_appt = None
@@ -58,6 +58,7 @@ async def handle_appt_changed(
         new_time = None
         event = None
         if not existing_appt:
+            print("hello not existing")
             if not isToday(appt_details['datetime']):
                 return {"status": "passed", "message": f"Appt {id} doesn't deal with today"}
             old_time = None
@@ -70,50 +71,51 @@ async def handle_appt_changed(
                 appointment_id=res.id
             )
         elif appt_details['canceled']:
+            print("hello canceled")
             old_time = existing_appt.start_time
             res = markAsCanceled(existing_appt, db)
             event = Event(
                 action=EventAction.cancel,
-                old_time=old_time,
-                appointment_id=existing_appt.id
-            )            
-        elif isToday(appt_details['datetime']):
-            new_time = datetime.fromisoformat(appt_details['datetime'])
-            if isToday(existing_appt.start_time):
-                old_time = existing_appt.start_time
-                res = updateStartTime(existing_appt, new_time, db)
-                event = Event(
-                    action=EventAction.reschedule_same_day,
-                    old_time=old_time,
-                    new_time=new_time,
-                    appointment_id=existing_appt.id
-                )
-            else:
-                old_time = existing_appt.start_time
-                new_time = datetime.fromisoformat(appt_details['datetime'])
-                res = markAsCanceled(existing_appt, db)
-                event = Event(
-                    action=EventAction.reschedule_incoming,
-                    old_time=old_time,
-                    new_time=new_time,
-                    appointment_id=existing_appt.id
-                )
-        elif not isToday(appt_details['datetime']):
-            old_time = existing_appt.start_time
-            new_time = datetime.fromisoformat(appt_details['datetime'])
-            res = updateStartTime(existing_appt, new_time, db)
-            event = Event(
-                action=EventAction.reschedule_outgoing,
-                old_time=old_time,
-                new_time=new_time,
-                appointment_id=existing_appt.id
-            )
-        else:
-            raise Exception("existing appt - Shouldn't end up here")
-        
+            old_time=old_time,
+            appointment_id=existing_appt.id
+        )            
+        # elif isToday(appt_details['datetime']):
+        #     new_time = datetime.fromisoformat(appt_details['datetime'])
+        #     if isToday(existing_appt.start_time):
+        #         old_time = existing_appt.start_time
+        #         res = updateStartTime(existing_appt, new_time, db)
+        #         event = Event(
+        #             action=EventAction.reschedule_same_day,
+        #             old_time=old_time,
+        #             new_time=new_time,
+        #             appointment_id=existing_appt.id
+        #         )
+        #     else:
+        #         old_time = existing_appt.start_time
+        #         new_time = datetime.fromisoformat(appt_details['datetime'])
+        #         res = markAsCanceled(existing_appt, db)
+        #         event = Event(
+        #             action=EventAction.reschedule_incoming,
+        #             old_time=old_time,
+        #             new_time=new_time,
+        #             appointment_id=existing_appt.id
+        #         )
+        # elif not isToday(appt_details['datetime']):
+        #     old_time = existing_appt.start_time
+        #     new_time = datetime.fromisoformat(appt_details['datetime'])
+        #     res = updateStartTime(existing_appt, new_time, db)
+        #     event = Event(
+        #         action=EventAction.reschedule_outgoing,
+        #         old_time=old_time,
+        #         new_time=new_time,
+        #         appointment_id=existing_appt.id
+        #     )
+        # else:
+        #     raise Exception("existing appt - Shouldn't end up here")
+        print("hihihihihi")
         db.add(event)
         db.commit()
-        
+
         return {
             "status": "success", 
             "data": json.dumps(event.to_dict())
