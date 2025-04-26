@@ -3,6 +3,7 @@ from datetime import datetime
 from app.models import Appointment, Snapshot
 from sqlalchemy import select
 from freezegun import freeze_time
+from app.config import settings
 
 
 def create_appointment_details(num):
@@ -23,28 +24,28 @@ def create_appointment_details(num):
         "paid": "no",
         "amountPaid": "0.00",
         "type": "Dummy Appt",
-        "appointmentTypeID": 42677283,
+        "appointmentTypeID": 123456789,
         "classID": None,
         "addonIDs": [],
         "category": "",
         "duration": "60",
-        "calendar": "Mathnasium of Aurora",
-        "calendarID": 1574840,
+        "calendar": "Seattle Grace General Surgery",
+        "calendarID": settings.calendar_id,
         "certificate": None,
-        "confirmationPage": "https://app.acuityscheduling.com/schedule.php?owner=14442476&action=appt&id%5B%5D=87c7fa149056bb797b7c4838b99bf7cb",
-        "confirmationPagePaymentLink": "https://app.acuityscheduling.com/schedule.php?owner=14442476&action=appt&id%5B%5D=87c7fa149056bb797b7c4838b99bf7cb&paymentLink=true#payment",
-        "location": "4510 S Reservoir Rd. Centennial, CO. 80015",
+        "confirmationPage": "this_is_a_URL",
+        "confirmationPagePaymentLink": "this_is_a_URL",
+        "location": "An Address",
         "notes": "",
-        "timezone": "America/Denver",
-        "calendarTimezone": "America/Denver",
+        "timezone": "America/Seattle",
+        "calendarTimezone": "America/Seattle",
         "canceled": False,
         "canClientCancel": True,
         "canClientReschedule": True,
         "labels": None,
         "forms": [],
-        "formsText": "Name: Dummy Apt\nPhone: \n\nLocation\n============\n4510 S Reservoir Rd. Centennial, CO. 80015\n",
+        "formsText": "beepboop",
         "isVerified": False,
-        "scheduledBy": "aurora@mathnasium.com"
+        "scheduledBy": "example@graysloanmemorial.com"
     }
 
 class TestSnapshot:

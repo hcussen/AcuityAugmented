@@ -37,23 +37,23 @@ def appointment_details():
         "addonIDs": [],
         "category": "",
         "duration": "60",
-        "calendar": "Mathnasium of Aurora",
-        "calendarID": 1574840,
+        "calendar": "Gray Sloan General Surgery",
+        "calendarID": settings.calendar_id,
         "certificate": None,
-        "confirmationPage": "https://app.acuityscheduling.com/schedule.php?owner=14442476&action=appt&id%5B%5D=87c7fa149056bb797b7c4838b99bf7cb",
-        "confirmationPagePaymentLink": "https://app.acuityscheduling.com/schedule.php?owner=14442476&action=appt&id%5B%5D=87c7fa149056bb797b7c4838b99bf7cb&paymentLink=true#payment",
-        "location": "4510 S Reservoir Rd. Centennial, CO. 80015",
+        "confirmationPage": "scheudling.graysloanmemorial.com",
+        "confirmationPagePaymentLink": "scheudling.graysloanmemorial.com",
+        "location": "Gray Sloan Memorial Hospital",
         "notes": "",
-        "timezone": "America/Denver",
-        "calendarTimezone": "America/Denver",
+        "timezone": "America/Seattle",
+        "calendarTimezone": "America/Seattle",
         "canceled": False,
         "canClientCancel": True,
         "canClientReschedule": True,
         "labels": None,
         "forms": [],
-        "formsText": "Name: Dummy Apt\nPhone: \n\nLocation\n============\n4510 S Reservoir Rd. Centennial, CO. 80015\n",
+        "formsText": "a form",
         "isVerified": False,
-        "scheduledBy": "aurora@mathnasium.com"
+        "scheduledBy": "example@graysloanmemorial.com"
     }
 
 
