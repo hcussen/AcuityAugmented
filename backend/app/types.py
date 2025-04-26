@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional, Union
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class AcuityAppointment(BaseModel):
@@ -45,9 +45,4 @@ class AcuityAppointment(BaseModel):
     forms: List = Field(default_factory=list)  # This could be further defined if needed
     formsText: str
 
-    class Config:
-        """Pydantic configuration options"""
-        # Allow extra attributes from the API that we haven't modeled
-        extra = "allow"
-        # Allow fields to be populated by alias
-        populate_by_name = True
+    model_config = ConfigDict(extra='allow')

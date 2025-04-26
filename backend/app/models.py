@@ -6,8 +6,6 @@ from sqlalchemy import String, DateTime, Integer, Boolean, Uuid, func, Enum
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.schema import  ForeignKey
 from sqlalchemy.dialects.sqlite import JSON
-from app.types import AcuityAppointment
-import json
 
 class Base(DeclarativeBase):
     pass

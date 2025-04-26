@@ -5,7 +5,6 @@ from sqlalchemy.exc import OperationalError as SQLAlchemyOperationalError
 from sqlalchemy.orm import sessionmaker  
 
 import sys
-import os
 from pathlib import Path
 
 # Add the project root directory to the Python path
