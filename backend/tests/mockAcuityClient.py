@@ -51,7 +51,11 @@ class MockAcuityClient:
             result = result[:limit]
             
         return result
-        
+    
+    def remove_appointment(self, appointment_id: str) -> None:
+        """Remove an appointment by ID"""
+        self.appointments = [a for a in self.appointments if a.get("id", '') != appointment_id]
+
     def clear_appointments(self):
         """Clear all test appointments"""
         self.appointments = []
