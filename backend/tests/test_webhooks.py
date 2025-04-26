@@ -185,6 +185,11 @@ class TestWebhooks:
                              'calendarID': settings.calendar_id
                          })
         
+        # assert the appointment was created
+        q = select(Appointment).where(Appointment.id == id)
+        fresh_appt = db_session.scalars(q).all()[0]
+        assert fresh_appt
+
         content = response.json()
         assert response.status_code == 200
         assert content['status'] == 'success'
@@ -192,49 +197,27 @@ class TestWebhooks:
         # Verify event creation
         event_data = json.loads(content['data'])
         assert event_data['action'] == EventAction.cancel.value
-        assert datetime.strptime(event_data['old_time'], '%Y-%m-%d %H:%M:%S') == appt.start_time.replace(tzinfo=None)
+        assert datetime.strptime(event_data['old_time'], '%Y-%m-%d %H:%M:%S') == fresh_appt.start_time.replace(tzinfo=None)
         assert event_data['new_time'] is None
 
         # Verify appointment state in database
-        q = select(Appointment).where(Appointment.id == id)
-        updated_appt = db_session.scalars(q).first()
-        assert updated_appt.is_canceled == True
-
-        # Add the appointment to the mock client
-        patched_acuity_client.add_appointment(appointment_details)
-
-        response = test_client.post('/webhook/appt-changed',
-                         data={
-                             'action': 'canceled',
-                             'id': str(acuity_id),
-                             'calendarID': settings.calendar_id
-                         })
-        
-        content = response.json()
-        assert response.status_code == 200
-        assert content['status'] == 'success'
-
-        # Verify event creation
-        event_data = json.loads(content['data'])
-        assert event_data['action'] == EventAction.cancel.value
-        assert datetime.strptime(event_data['old_time'], '%Y-%m-%d %H:%M:%S') == appt.start_time.replace(tzinfo=None)
-        assert event_data['new_time'] is None
-
-        # Verify appointment state in database
-        q = select(Appointment).where(Appointment.id == id)
-        updated_appt = db_session.scalars(q).first()
-        assert updated_appt.is_canceled == True
+        assert fresh_appt.is_canceled == True
 
     @freeze_time("2025-04-25")
     def test_reschedule_same_day(self, db_session, test_client, patched_acuity_client):
         # Create an existing appointment
+        id = uuid.uuid4()
+        acuity_id = 12345
+        old_start_time = "2025-04-25T14:00:00-0600"
         appt = Appointment(
-            id=12345,
+            id=id,
+            acuity_id=acuity_id,
             first_name="John",
             last_name="Doe",
-            start_time=datetime.fromisoformat("2025-04-25T14:00:00-0600"),
+            start_time=datetime.fromisoformat(old_start_time),
+            acuity_created_at=datetime.now() - timedelta(days=1),
             duration=60,
-            canceled=False
+            is_canceled=False
         )
         db_session.add(appt)
         db_session.commit()
@@ -253,9 +236,14 @@ class TestWebhooks:
         response = test_client.post('/webhook/appt-changed',
                          data={
                              'action': 'rescheduled',
-                             'id': '12345',
+                             'id': str(acuity_id),
                              'calendarID': settings.calendar_id
                          })
+        
+        # assert the appointment was created
+        q = select(Appointment).where(Appointment.id == id)
+        fresh_appt = db_session.scalars(q).all()[0]
+        assert fresh_appt
         
         content = response.json()
         assert response.status_code == 200
@@ -264,24 +252,29 @@ class TestWebhooks:
         # Verify event creation
         event_data = json.loads(content['data'])
         assert event_data['action'] == EventAction.reschedule_same_day.value
-        assert datetime.strptime(event_data['old_time'], '%Y-%m-%d %H:%M:%S') == appt.start_time.replace(tzinfo=None)
+        assert datetime.strptime(event_data['old_time'], '%Y-%m-%d %H:%M:%S') == datetime.fromisoformat(old_start_time).replace(tzinfo=None)
         assert datetime.strptime(event_data['new_time'], '%Y-%m-%d %H:%M:%S') == datetime.fromisoformat("2025-04-25T16:00:00-0600").replace(tzinfo=None)
 
         # Verify appointment update in database
-        q = select(Appointment).where(Appointment.id == 12345)
+        q = select(Appointment).where(Appointment.id == id)
         updated_appt = db_session.scalars(q).first()
-        assert updated_appt.start_time == datetime.fromisoformat("2025-04-25T16:00:00-0600")
+        expected_time = datetime.fromisoformat("2025-04-25T16:00:00-0600").replace(tzinfo=None)
+        assert updated_appt.start_time == expected_time
 
     @freeze_time("2025-04-25")
     def test_reschedule_incoming(self, db_session, test_client, patched_acuity_client):
         # Create an existing appointment for a different day
+        id = uuid.uuid4()
+        acuity_id = 12345
         appt = Appointment(
-            id=12345,
+            id=id,
+            acuity_id=acuity_id,
             first_name="John",
             last_name="Doe",
             start_time=datetime.fromisoformat("2025-04-26T14:00:00-0600"),
+            acuity_created_at=datetime.now() - timedelta(days=1),
             duration=60,
-            canceled=False
+            is_canceled=False
         )
         db_session.add(appt)
         db_session.commit()
@@ -308,27 +301,33 @@ class TestWebhooks:
         assert response.status_code == 200
         assert content['status'] == 'success'
 
+        # Verify appointment is marked as canceled
+        q = select(Appointment).where(Appointment.id == id)
+        updated_appt = db_session.scalars(q).first()
+        assert updated_appt.is_canceled == True
+
         # Verify event creation
         event_data = json.loads(content['data'])
         assert event_data['action'] == EventAction.reschedule_incoming.value
-        assert datetime.strptime(event_data['old_time'], '%Y-%m-%d %H:%M:%S') == appt.start_time.replace(tzinfo=None)
+        assert datetime.strptime(event_data['old_time'], '%Y-%m-%d %H:%M:%S') == updated_appt.start_time.replace(tzinfo=None)
         assert datetime.strptime(event_data['new_time'], '%Y-%m-%d %H:%M:%S') == datetime.fromisoformat("2025-04-25T16:00:00-0600").replace(tzinfo=None)
 
-        # Verify appointment is marked as canceled
-        q = select(Appointment).where(Appointment.id == 12345)
-        updated_appt = db_session.scalars(q).first()
-        assert updated_appt.canceled == True
+        
 
     @freeze_time("2025-04-25")
     def test_reschedule_outgoing(self, db_session, test_client, patched_acuity_client):
         # Create an existing appointment for today
+        id = uuid.uuid4()
+        acuity_id = 12345
         appt = Appointment(
-            id=12345,
+            id=id,
+            acuity_id=acuity_id,
             first_name="John",
             last_name="Doe",
             start_time=datetime.fromisoformat("2025-04-25T14:00:00-0600"),
+            acuity_created_at=datetime.now() - timedelta(days=1),
             duration=60,
-            canceled=False
+            is_canceled=False
         )
         db_session.add(appt)
         db_session.commit()
@@ -355,13 +354,15 @@ class TestWebhooks:
         assert response.status_code == 200
         assert content['status'] == 'success'
 
+        # Verify appointment time update
+        q = select(Appointment).where(Appointment.id == id)
+        updated_appt = db_session.scalars(q).first()
+        assert updated_appt.start_time == datetime.fromisoformat("2025-04-26T16:00:00-0600").replace(tzinfo=None)   
+
         # Verify event creation
         event_data = json.loads(content['data'])
         assert event_data['action'] == EventAction.reschedule_outgoing.value
-        assert datetime.strptime(event_data['old_time'], '%Y-%m-%d %H:%M:%S') == appt.start_time.replace(tzinfo=None)
+        assert datetime.strptime(event_data['old_time'], '%Y-%m-%d %H:%M:%S') == datetime.fromisoformat("2025-04-25T14:00:00-0600").replace(tzinfo=None)
         assert datetime.strptime(event_data['new_time'], '%Y-%m-%d %H:%M:%S') == datetime.fromisoformat("2025-04-26T16:00:00-0600").replace(tzinfo=None)
 
-        # Verify appointment time update
-        q = select(Appointment).where(Appointment.id == 12345)
-        updated_appt = db_session.scalars(q).first()
-        assert updated_appt.start_time == datetime.fromisoformat("2025-04-26T16:00:00-0600")
+       

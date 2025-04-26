@@ -50,6 +50,7 @@ async def handle_appt_changed(
         # Fetch appointment details from Acuity API
         try:
             appt_details: AcuityAppointment = acuity_client.get_appointment(id)
+            print(f"Fetched appointment details: {json.dumps(appt_details)}")
         except requests.exceptions.RequestException as e:
             raise HTTPException(status_code=500, detail=f"Failed to fetch appointment details: {str(e)}")
         
@@ -62,7 +63,7 @@ async def handle_appt_changed(
             if not isToday(appt_details['datetime']):
                 return {"status": "passed", "message": f"Appt {id} doesn't deal with today"}
             old_time = None
-            new_time = datetime.fromisoformat(appt_details['datetime'])
+            new_time = datetime.fromisoformat(appt_details['datetime']).replace(tzinfo=None)
             res = createNewAppointment(appt_details, db)
             event = Event(
                 action=EventAction.schedule,
@@ -76,42 +77,45 @@ async def handle_appt_changed(
             res = markAsCanceled(existing_appt, db)
             event = Event(
                 action=EventAction.cancel,
-            old_time=old_time,
-            appointment_id=existing_appt.id
-        )            
-        # elif isToday(appt_details['datetime']):
-        #     new_time = datetime.fromisoformat(appt_details['datetime'])
-        #     if isToday(existing_appt.start_time):
-        #         old_time = existing_appt.start_time
-        #         res = updateStartTime(existing_appt, new_time, db)
-        #         event = Event(
-        #             action=EventAction.reschedule_same_day,
-        #             old_time=old_time,
-        #             new_time=new_time,
-        #             appointment_id=existing_appt.id
-        #         )
-        #     else:
-        #         old_time = existing_appt.start_time
-        #         new_time = datetime.fromisoformat(appt_details['datetime'])
-        #         res = markAsCanceled(existing_appt, db)
-        #         event = Event(
-        #             action=EventAction.reschedule_incoming,
-        #             old_time=old_time,
-        #             new_time=new_time,
-        #             appointment_id=existing_appt.id
-        #         )
-        # elif not isToday(appt_details['datetime']):
-        #     old_time = existing_appt.start_time
-        #     new_time = datetime.fromisoformat(appt_details['datetime'])
-        #     res = updateStartTime(existing_appt, new_time, db)
-        #     event = Event(
-        #         action=EventAction.reschedule_outgoing,
-        #         old_time=old_time,
-        #         new_time=new_time,
-        #         appointment_id=existing_appt.id
-        #     )
-        # else:
-        #     raise Exception("existing appt - Shouldn't end up here")
+                old_time=old_time,
+                appointment_id=existing_appt.id
+            )            
+        elif isToday(appt_details['datetime']):
+            # Convert to naive datetime for database storage
+            new_time = datetime.fromisoformat(appt_details['datetime']).replace(tzinfo=None)
+            print(type(existing_appt.start_time))
+            if isToday(existing_appt.start_time):
+                print("hello reschedule same day")
+                old_time = existing_appt.start_time
+                res = updateStartTime(existing_appt, new_time, db)
+                event = Event(
+                    action=EventAction.reschedule_same_day,
+                    old_time=old_time,
+                    new_time=new_time,
+                    appointment_id=existing_appt.id
+                )
+            else:
+                old_time = existing_appt.start_time
+                new_time = datetime.fromisoformat(appt_details['datetime']).replace(tzinfo=None)
+                res = markAsCanceled(existing_appt, db)
+                event = Event(
+                    action=EventAction.reschedule_incoming,
+                    old_time=old_time,
+                    new_time=new_time,
+                    appointment_id=existing_appt.id
+                )
+        elif not isToday(appt_details['datetime']):
+            old_time = existing_appt.start_time
+            new_time = datetime.fromisoformat(appt_details['datetime']).replace(tzinfo=None)
+            res = updateStartTime(existing_appt, new_time, db)
+            event = Event(
+                action=EventAction.reschedule_outgoing,
+                old_time=old_time,
+                new_time=new_time,
+                appointment_id=existing_appt.id
+            )
+        else:
+            raise Exception("existing appt - Shouldn't end up here")
         print("hihihihihi")
         db.add(event)
         db.commit()
@@ -120,7 +124,7 @@ async def handle_appt_changed(
             "status": "success", 
             "data": json.dumps(event.to_dict())
             }
-            
+        
     except Exception as e:
         # db.rollback()
         traceback.print_exc()

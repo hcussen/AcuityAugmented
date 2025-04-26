@@ -4,10 +4,10 @@ from datetime import datetime
 from app.models import Appointment
 from app.core.type_conversion import acuity_to_appointment
 
-def isToday(timestamp_string):
+def isToday(timestamp_string: str) -> bool:
     '''takes in a date in the format 2025-06-03T19:00:00-0600'''
     # Parse the input timestamp
-    timestamp = datetime.fromisoformat(timestamp_string)
+    timestamp = datetime.fromisoformat(str(timestamp_string))
     
     # Get today's date
     today = datetime.now()
@@ -28,12 +28,11 @@ def createNewAppointment(appt: AcuityAppointment, db):
 def updateStartTime(appt: Appointment, newStart: datetime, db):
     q = update(Appointment)\
             .where(Appointment.id == appt.id)\
-            .values(start_time=newStart)\
-            .returning(Appointment.id, Appointment.start_time)
-    res = db.execute(q)
-    result = res.first()
+            .values(start_time=newStart)
+    db.execute(q)
     db.commit()
-    return result
+    db.refresh(appt)
+    return appt
 
 def markAsCanceled(appt: Appointment, db):
     q = update(Appointment)\
