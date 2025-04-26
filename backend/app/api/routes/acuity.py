@@ -20,6 +20,10 @@ router = APIRouter(
     tags=["acuity"]
 )
 
+@router.get("/appointment")
+def get_acuity_appointment(id: str):
+    return acuity_client.get_appointment(id)
+
 @router.get("/snapshot")
 def take_snapshot(db: Session = Depends(get_db)):
     try: 

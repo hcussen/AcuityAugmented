@@ -3,6 +3,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError as SQLAlchemyOperationalError
 from sqlalchemy.orm import sessionmaker  
+from .mockAcuityClient import MockAcuityClient
+from app.core.acuityClient import AcuityClient, acuity_client
 
 import sys
 from pathlib import Path
@@ -83,3 +85,26 @@ def test_client(db_session):
     app.dependency_overrides[get_db] = override_get_db  
     with TestClient(app) as test_client:  
         yield test_client  
+
+
+@pytest.fixture
+def mock_acuity():
+    """Fixture that provides a MockAcuityClient instance"""
+    return MockAcuityClient()
+
+
+@pytest.fixture
+def patched_acuity_client(monkeypatch, mock_acuity):
+    """Fixture that replaces the singleton acuity_client with our mock"""
+    # Replace the global client with our mock
+    monkeypatch.setattr("app.core.acuityClient.acuity_client", mock_acuity)
+    
+    # Also patch any imports of acuity_client in other modules
+    monkeypatch.setattr("app.api.routes.acuity.acuity_client", mock_acuity)
+    
+    # Also patch the AcuityClient class to return our mock for any new instances
+    def mock_init(self):
+        self.__dict__ = mock_acuity.__dict__
+    monkeypatch.setattr(AcuityClient, "__init__", mock_init)
+    
+    return mock_acuity
