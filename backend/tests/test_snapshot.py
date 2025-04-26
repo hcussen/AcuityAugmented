@@ -91,3 +91,64 @@ class TestSnapshot:
             assert appointment.start_time == datetime.fromisoformat(appt_data["datetime"]).replace(tzinfo=None)
             assert appointment.duration == int(appt_data["duration"])
             assert appointment.is_canceled == appt_data["canceled"]
+
+    @freeze_time("2025-04-26")
+    def test_multiple_snapshots(self, db_session, test_client, patched_acuity_client):
+        # First snapshot with initial appointments
+        initial_appointments = [
+            create_appointment_details(0),
+            create_appointment_details(1),
+        ]
+        
+        for appt in initial_appointments:
+            patched_acuity_client.add_appointment(appt)
+
+        # Take first snapshot
+        response = test_client.get('/acuity/snapshot')
+        assert response.status_code == 200
+        content = response.json()
+        assert content["count"] == 2
+        
+        # Verify first snapshot
+        snapshots = db_session.query(Snapshot).all()
+        assert len(snapshots) == 1
+        assert len(snapshots[0].dump) == 2
+
+        # Add new appointments
+        new_appointments = [
+            create_appointment_details(2),
+            create_appointment_details(3),
+            create_appointment_details(4),
+        ]
+        
+        for appt in new_appointments:
+            patched_acuity_client.add_appointment(appt)
+
+        # Take second snapshot
+        response = test_client.get('/acuity/snapshot')
+        assert response.status_code == 200
+        content = response.json()
+        assert content["count"] == 5  # Should now have all 5 appointments
+        
+        # Verify snapshots
+        snapshots = db_session.query(Snapshot).all()
+        assert len(snapshots) == 2  # Should now have 2 snapshots
+        assert len(snapshots[1].dump) == 5  # Latest snapshot should have all appointments
+        
+        # Verify all appointments exist in database
+        appointments = db_session.query(Appointment).all()
+        assert len(appointments) == 5
+        
+        # Verify each appointment exists and has correct details
+        all_appointments = initial_appointments + new_appointments
+        for appt_data in all_appointments:
+            appointment = db_session.query(Appointment).filter(
+                Appointment.acuity_id == appt_data["id"]
+            ).first()
+            
+            assert appointment is not None
+            assert appointment.first_name == appt_data["firstName"]
+            assert appointment.last_name == appt_data["lastName"]
+            assert appointment.start_time == datetime.fromisoformat(appt_data["datetime"]).replace(tzinfo=None)
+            assert appointment.duration == int(appt_data["duration"])
+            assert appointment.is_canceled == appt_data["canceled"]
