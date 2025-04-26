@@ -6,8 +6,9 @@ from sqlalchemy import String, DateTime, Integer, Boolean, Uuid, func, Enum
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.schema import  ForeignKey
 from sqlalchemy.dialects.sqlite import JSON
+from sqlalchemy_serializer import SerializerMixin
 
-class Base(DeclarativeBase):
+class Base(DeclarativeBase, SerializerMixin):
     pass
 
 class Snapshot(Base):
@@ -66,5 +67,19 @@ class Event(Base):
         ondelete="CASCADE")
     )
     appointment: Mapped["Appointment"] = relationship(back_populates='events')
+
+    serialize_rules = ('-appointment',)
+    # def to_dict(self):
+    #     return {
+    #         'id': self.id,
+    #         'action': self.action,
+    #         'created_at': self.created_at,
+    #         'old_time': self.old_time,
+    #         'new_time': self.new_time,
+    #         ''
+    #     }
+    # def __repr__():
+    #     pass
+
 
     

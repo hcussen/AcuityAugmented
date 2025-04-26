@@ -6,7 +6,7 @@ from sqlalchemy import select
 import requests
 from datetime import datetime 
 from app.config import settings
-
+import json 
 import traceback
 
 from app.core.acuityClient import acuity_client
@@ -116,7 +116,7 @@ async def handle_appt_changed(
         
         return {
             "status": "success", 
-            "data": event
+            "data": json.dumps(event.to_dict())
             }
             
     except Exception as e:

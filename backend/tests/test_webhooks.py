@@ -1,6 +1,16 @@
 from freezegun import freeze_time
 from datetime import datetime
 from app.config import settings
+from app.models import Event, EventAction, Appointment
+from app.core.apptActions import isToday
+import json
+from sqlalchemy import select
+import uuid
+
+class TestIsToday:
+    @freeze_time("2025-04-25")
+    def test_is_today(self):
+        assert isToday("2025-04-25T19:00:00-0600")
 
 class TestWebhooks:
     def test_not_from_calendar_of_interest(self, db_session, test_client, patched_acuity_client):
@@ -53,31 +63,86 @@ class TestWebhooks:
         assert content['status'] == 'passed'
         assert content['message'] == f"Appt 12345 doesn't deal with today"
 
-    # @freeze_time("2025-04-25")
-    # def test_newly_scheduled_is_today(self, db_session, test_client, patched_acuity_client):
-    #     # precondition: there is no existing appt in the db 
+    @freeze_time("2025-04-25")
+    def test_newly_scheduled_is_today(self, db_session, test_client, patched_acuity_client):
+        # precondition: there is no existing appt in the db 
 
-    #     appointment_details = {
-    #         "id": 12345,
-    #         "firstName": "John",
-    #         "lastName": "Doe",
-    #         "datetime": "2025-04-25T19:00:00-0600",
-    #         "duration": "60"
-    #     }
+        appointment_details = {
+            "id": 12345,
+            "firstName": "Meredith",
+            "lastName": "Gray",
+            "phone": "",
+            "email": "",
+            "date": "April 25, 2025",
+            "time": "7:00pm",
+            "endTime": "8:00pm",
+            "dateCreated": "April 24, 2025",
+            "datetimeCreated": "2025-04-24T19:00:00-0600",
+            "datetime": "2025-04-25T19:00:00-0600",
+            "price": "0.00",
+            "priceSold": "0.00",
+            "paid": "no",
+            "amountPaid": "0.00",
+            "type": "Dummy Appt",
+            "appointmentTypeID": 42677283,
+            "classID": None,
+            "addonIDs": [],
+            "category": "",
+            "duration": "60",
+            "calendar": "Mathnasium of Aurora",
+            "calendarID": 1574840,
+            "certificate": None,
+            "confirmationPage": "https://app.acuityscheduling.com/schedule.php?owner=14442476&action=appt&id%5B%5D=87c7fa149056bb797b7c4838b99bf7cb",
+            "confirmationPagePaymentLink": "https://app.acuityscheduling.com/schedule.php?owner=14442476&action=appt&id%5B%5D=87c7fa149056bb797b7c4838b99bf7cb&paymentLink=true#payment",
+            "location": "4510 S Reservoir Rd. Centennial, CO. 80015",
+            "notes": "",
+            "timezone": "America/Denver",
+            "calendarTimezone": "America/Denver",
+            "canceled": False,
+            "canClientCancel": True,
+            "canClientReschedule": True,
+            "labels": None,
+            "forms": [],
+            "formsText": "Name: Dummy Apt\nPhone: \n\nLocation\n============\n4510 S Reservoir Rd. Centennial, CO. 80015\n",
+            "isVerified": False,
+            "scheduledBy": "aurora@mathnasium.com"
+        }
     
-    #     # Add the appointment to the mock client
-    #     patched_acuity_client.add_appointment(appointment_details)
+    
+        # Add the appointment to the mock client
+        patched_acuity_client.add_appointment(appointment_details)
 
-    #     response = test_client.post('/webhook/appt-changed',
-    #                      data={
-    #                          'action': 'changed',
-    #                          'id': '12345',
-    #                          'calendarID': '12345',
-    #                          'type': '77085032'
-    #                      })
-
-    #     assert response.status_code == 200
-    #     content = response.json()
-    #     assert content['status'] == 'passed'
+        response = test_client.post('/webhook/appt-changed',
+                         data={
+                             'action': 'changed',
+                             'id': '12345',
+                             'calendarID': settings.calendar_id,
+                             'type': '77085032'
+                         })
         
-    
+        event = Event(
+                action=EventAction.schedule,
+                old_time=None,
+                new_time="2025-04-25T19:00:00-0600",
+                appointment_id=12345
+            )
+
+        content = response.json()
+        returnedEvent = json.loads(content['data'])
+        print(content)
+        assert response.status_code == 200
+        assert content['status'] == 'success'
+        assert returnedEvent['action'] == event.action.value
+        assert returnedEvent['old_time'] == event.old_time
+
+        # Parse both strings to datetime objects
+        returned_dt = datetime.strptime(returnedEvent['new_time'], '%Y-%m-%d %H:%M:%S')
+        event_dt = datetime.fromisoformat(event.new_time.replace('Z', '+00:00')).replace(tzinfo=None)
+
+        # Then compare the datetime objects
+        assert returned_dt == event_dt
+
+        # assert the appointment was created
+        q = select(Appointment).where(Appointment.id == uuid.UUID(returnedEvent['appointment_id']))
+        existing_appt = db_session.scalars(q).all()[0]
+        assert existing_appt
