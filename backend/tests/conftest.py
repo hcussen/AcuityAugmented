@@ -101,6 +101,7 @@ def patched_acuity_client(monkeypatch, mock_acuity):
     
     # Also patch any imports of acuity_client in other modules
     monkeypatch.setattr("app.api.routes.acuity.acuity_client", mock_acuity)
+    monkeypatch.setattr("app.api.routes.webhook.acuity_client", mock_acuity)
     
     # Also patch the AcuityClient class to return our mock for any new instances
     def mock_init(self):

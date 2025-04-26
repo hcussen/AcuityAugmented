@@ -26,7 +26,6 @@ async def handle_appt_changed(
     id: str = Form(...),
     calendarID: Optional[str] = Form(None),
     appointmentTypeID: Optional[str] = Form(None),
-    mock: Optional[bool] = Form(False),
     db: Session = Depends(get_db)
 ):
     print(f"Received webhook: Action={action}, ID={id}, Calendar={calendarID}, Type={appointmentTypeID}")
@@ -50,7 +49,7 @@ async def handle_appt_changed(
         
         # Fetch appointment details from Acuity API
         try:
-            appt_details: AcuityAppointment = acuity_client.get_appointment(id, mock=mock)
+            appt_details: AcuityAppointment = acuity_client.get_appointment(id)
         except requests.exceptions.RequestException as e:
             raise HTTPException(status_code=500, detail=f"Failed to fetch appointment details: {str(e)}")
         

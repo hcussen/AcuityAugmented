@@ -1,5 +1,3 @@
-import pytest
-from app.api.routes.acuity import get_acuity_appointment
 
 def test_fetch_appointment(test_client, patched_acuity_client):
     # Add a test appointment to the mock
