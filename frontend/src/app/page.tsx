@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
 
 export default function Home() {
   const [scheduleDiff, setScheduleDiff] = useState<Array<HourlyDiff> | null>(
@@ -59,6 +60,15 @@ export default function Home() {
     }))
   }, [schedule])
 
+  const takeSnapshot = async () => {
+    try {
+      const message = await apiClient.takeSnapshot()
+      console.log(message)
+    } catch (error) {
+      console.error("Error taking snapshot", error)
+    }
+  }
+
   const fetchSchedule = async () => {
     try {
       const scheduleData = await apiClient.getSchedule()
@@ -99,23 +109,22 @@ export default function Home() {
     return () => clearInterval(pollInterval)
   }, [])
 
-  useEffect(() => {
-    console.log(JSON.stringify(schedule))
-    console.log(appointmentsByHour)
-    console.log(nonDummyByHour)
-  }, [schedule])
-
   return (
     <div className="min-h-screen p-8 font-[family-name:var(--font-geist-sans)]">
       <main className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Today's Schedule Changes</h1>
-          <button
-            onClick={fetchSchedule}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-          >
-            Fetch Schedule
-          </button>
+          <div className="flex gap-2">
+            <Button onClick={takeSnapshot} variant="outline">
+              Take Snapshot
+            </Button>
+            <Button
+              className=" bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+              onClick={fetchSchedule}
+            >
+              Fetch Schedule
+            </Button>
+          </div>
         </div>
         <div className="space-y-8">
           <div>

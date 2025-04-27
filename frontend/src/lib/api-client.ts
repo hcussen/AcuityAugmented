@@ -46,6 +46,26 @@ export class ApiClient {
       throw error
     }
   }
+
+  async takeSnapshot(): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseUrl}/acuity/snapshot`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error("Error fetching schedule:", error)
+      throw error
+    }
+  }
 }
 
 // Export a default instance
