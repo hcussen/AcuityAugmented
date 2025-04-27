@@ -43,7 +43,8 @@ class TestScheduleDiff:
             id=event_id,
             action=EventAction.schedule,
             appointment_id=appt_id,
-            new_time=datetime.fromisoformat("2025-04-24T17:00:00-06:00")
+            new_time=datetime.fromisoformat("2025-04-24T17:00:00-06:00"),
+            created_at=datetime.now()  # Explicitly set created_at to the frozen time
         )
         db_session.add(event)
         db_session.commit()

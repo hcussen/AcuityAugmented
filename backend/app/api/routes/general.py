@@ -94,7 +94,6 @@ def get_schedule_diff(db: Session = Depends(get_db)):
             .order_by(Event.created_at)
             .all()
         )
-
         # Group appointments by hour
         hourly_diffs: Dict[str, Dict[str, List[dict]]] = {}
         center_open, center_close = settings.hours_open[today_day_of_week]

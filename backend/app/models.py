@@ -1,7 +1,7 @@
 import uuid
 import enum
 from datetime import datetime
-from typing import List 
+from typing import List
 from sqlalchemy import String, DateTime, Integer, Boolean, Uuid, func, Enum
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.schema import  ForeignKey
@@ -69,6 +69,9 @@ class Event(Base):
     appointment: Mapped["Appointment"] = relationship(back_populates='events')
 
     serialize_rules = ('-appointment',)
+    
+    def __repr__(self) -> str:
+        return f"Event #{self.id}: {self.action} {self.created_at} {self.old_time} {self.new_time}"
     # def to_dict(self):
     #     return {
     #         'id': self.id,
