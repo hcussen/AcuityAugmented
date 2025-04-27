@@ -113,11 +113,11 @@ def get_schedule_diff(db: Session = Depends(get_db)):
             }
 
         for event, first_name, last_name, start_time in today_events:
-            print("processing", event.id)
+            print("processing", event)
             old_hour, new_hour = None, None
             if event.old_time:
                 old_hour = event.old_time.strftime("%H:%M")
-            else:
+            if event.new_time:
                 new_hour = event.new_time.strftime("%H:%M")
 
             if old_hour not in hourly_diffs.keys() and new_hour not in hourly_diffs.keys():

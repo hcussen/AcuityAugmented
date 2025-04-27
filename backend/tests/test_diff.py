@@ -62,7 +62,7 @@ class TestScheduleDiff:
         assert five_pm_diff["added"][0]["last_name"] == "Doe"
         assert len(five_pm_diff["deleted"]) == 0
 
-    @freeze_time("2025-04-26T09:00:00-06:00")
+    @freeze_time("2025-04-24")
     def test_schedule_cancel_appointment(self, db_session, test_client):
         """Test that a cancelled appointment appears in the correct hour's deleted list"""
         # Create appointment and cancel event
@@ -72,8 +72,8 @@ class TestScheduleDiff:
             acuity_id=12345,
             first_name="Jane",
             last_name="Smith",
-            start_time=datetime.fromisoformat("2025-04-26T14:00:00-06:00"),
-            acuity_created_at=datetime.now(),
+            start_time=datetime.fromisoformat("2025-04-24T16:00:00-06:00"),
+            acuity_created_at=datetime.fromisoformat("2025-04-23T16:00:00-06:00"),
             duration=60,
             is_canceled=True
         )
@@ -82,7 +82,8 @@ class TestScheduleDiff:
         event = Event(
             action=EventAction.cancel,
             appointment_id=appt_id,
-            old_time=datetime.fromisoformat("2025-04-26T14:00:00-06:00")
+            old_time=datetime.fromisoformat("2025-04-24T16:00:00-06:00"),
+            created_at=datetime.now()
         )
         db_session.add(event)
         db_session.commit()
@@ -91,15 +92,15 @@ class TestScheduleDiff:
         assert response.status_code == 200
         diffs = response.json()
         
-        # Find the 14:00 slot
-        two_pm_diff = next(diff for diff in diffs if diff["hour"] == "14:00")
-        assert len(two_pm_diff["deleted"]) == 1
-        assert two_pm_diff["deleted"][0]["id"] == str(appt_id)
-        assert two_pm_diff["deleted"][0]["first_name"] == "Jane"
-        assert two_pm_diff["deleted"][0]["last_name"] == "Smith"
-        assert len(two_pm_diff["added"]) == 0
+        # Find the 16:00 slot
+        four_pm_diff = next(diff for diff in diffs if diff["hour"] == "16:00")
+        assert len(four_pm_diff["deleted"]) == 1
+        assert four_pm_diff["deleted"][0]["id"] == str(appt_id)
+        assert four_pm_diff["deleted"][0]["first_name"] == "Jane"
+        assert four_pm_diff["deleted"][0]["last_name"] == "Smith"
+        assert len(four_pm_diff["added"]) == 0
 
-    @freeze_time("2025-04-26T09:00:00-06:00")
+    @freeze_time("2025-04-24T15:30:00-06:00")
     def test_schedule_reschedule_same_day(self, db_session, test_client):
         """Test that a same-day reschedule appears in both the old and new hour slots"""
         # Create appointment and reschedule event
@@ -109,8 +110,8 @@ class TestScheduleDiff:
             acuity_id=12345,
             first_name="Bob",
             last_name="Wilson",
-            start_time=datetime.fromisoformat("2025-04-26T13:00:00-06:00"),
-            acuity_created_at=datetime.now(),
+            start_time=datetime.fromisoformat("2025-04-24T18:00:00-06:00"),
+            acuity_created_at=datetime.fromisoformat("2025-04-23T16:00:00-06:00"),
             duration=60
         )
         db_session.add(appointment)
@@ -118,8 +119,9 @@ class TestScheduleDiff:
         event = Event(
             action=EventAction.reschedule_same_day,
             appointment_id=appt_id,
-            old_time=datetime.fromisoformat("2025-04-26T11:00:00-06:00"),
-            new_time=datetime.fromisoformat("2025-04-26T13:00:00-06:00")
+            old_time=datetime.fromisoformat("2025-04-24T16:00:00-06:00"),
+            new_time=datetime.fromisoformat("2025-04-24T18:00:00-06:00"),
+            created_at=datetime.now()
         )
         db_session.add(event)
         db_session.commit()
@@ -128,21 +130,21 @@ class TestScheduleDiff:
         assert response.status_code == 200
         diffs = response.json()
         
-        # Find the 11:00 slot (old time)
-        eleven_am_diff = next(diff for diff in diffs if diff["hour"] == "11:00")
-        assert len(eleven_am_diff["deleted"]) == 1
-        assert eleven_am_diff["deleted"][0]["id"] == str(appt_id)
-        assert eleven_am_diff["deleted"][0]["first_name"] == "Bob"
-        assert eleven_am_diff["deleted"][0]["last_name"] == "Wilson"
-        assert len(eleven_am_diff["added"]) == 0
+        # Find the 16:00 slot (old time)
+        four_pm_diff = next(diff for diff in diffs if diff["hour"] == "16:00")
+        assert len(four_pm_diff["deleted"]) == 1
+        assert four_pm_diff["deleted"][0]["id"] == str(appt_id)
+        assert four_pm_diff["deleted"][0]["first_name"] == "Bob"
+        assert four_pm_diff["deleted"][0]["last_name"] == "Wilson"
+        assert len(four_pm_diff["added"]) == 0
 
-        # Find the 13:00 slot (new time)
-        one_pm_diff = next(diff for diff in diffs if diff["hour"] == "13:00")
-        assert len(one_pm_diff["added"]) == 1
-        assert one_pm_diff["added"][0]["id"] == str(appt_id)
-        assert one_pm_diff["added"][0]["first_name"] == "Bob"
-        assert one_pm_diff["added"][0]["last_name"] == "Wilson"
-        assert len(one_pm_diff["deleted"]) == 0
+        # Find the 18:00 slot (new time)
+        six_pm_diff = next(diff for diff in diffs if diff["hour"] == "18:00")
+        assert len(six_pm_diff["added"]) == 1
+        assert six_pm_diff["added"][0]["id"] == str(appt_id)
+        assert six_pm_diff["added"][0]["first_name"] == "Bob"
+        assert six_pm_diff["added"][0]["last_name"] == "Wilson"
+        assert len(six_pm_diff["deleted"]) == 0
 
     @freeze_time("2025-04-26T09:00:00-06:00")
     def test_schedule_reschedule_incoming(self, db_session, test_client):
