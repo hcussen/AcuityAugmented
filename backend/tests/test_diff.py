@@ -22,7 +22,7 @@ class TestScheduleDiff:
             assert len(diff["added"]) == 0
             assert len(diff["deleted"]) == 0
 
-    @freeze_time("2025-04-24T09:00:00-06:00")
+    @freeze_time("2025-04-24")
     def test_schedule_new_appointment(self, db_session, test_client):
         """Test that a newly scheduled appointment appears in the correct hour's added list"""
         # Create appointment and schedule event
@@ -32,7 +32,7 @@ class TestScheduleDiff:
             acuity_id=12345,
             first_name="John",
             last_name="Doe",
-            start_time=datetime.fromisoformat("2025-04-26T17:00:00-06:00"),
+            start_time=datetime.fromisoformat("2025-04-24T17:00:00-06:00"),
             acuity_created_at=datetime.now(),
             duration=60
         )
@@ -43,7 +43,7 @@ class TestScheduleDiff:
             id=event_id,
             action=EventAction.schedule,
             appointment_id=appt_id,
-            new_time=datetime.fromisoformat("2025-04-26T17:00:00-06:00")
+            new_time=datetime.fromisoformat("2025-04-24T17:00:00-06:00")
         )
         db_session.add(event)
         db_session.commit()
@@ -54,6 +54,7 @@ class TestScheduleDiff:
         
         # Find the 10:00 slot
         five_pm_diff = next(diff for diff in diffs if diff["hour"] == "17:00")
+        print(five_pm_diff)
         assert len(five_pm_diff["added"]) == 1
         assert five_pm_diff["added"][0]["id"] == str(appt_id)
         assert five_pm_diff["added"][0]["first_name"] == "John"
