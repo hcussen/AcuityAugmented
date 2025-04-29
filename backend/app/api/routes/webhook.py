@@ -146,15 +146,3 @@ async def handle_appt_changed(
         traceback.print_exc()
         print(str(e))
         return {"status": "error", "message": str(e)}
-
-
-@router.post("/mock")
-def mock_webhook(
-    action: str = Form(...),
-    id: str = Form(...),
-    calendarID: Optional[str] = Form(None),
-    appointmentTypeID: Optional[str] = Form(None),
-    db: Session = Depends(get_db),
-):
-
-    return handle_appt_changed(action, id, calendarID, appointmentTypeID, mock=True)
