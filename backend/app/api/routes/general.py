@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Dict, List
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 
 import traceback
 
@@ -74,12 +74,11 @@ def get_schedule(db: Session = Depends(get_db)):
 def get_schedule_diff(db: Session = Depends(get_db)):
     try:
         # Get current date boundaries
-        # now = datetime(2025, 4, 19, 12, 25, 27)  # Using provided timestamp
+        # now = datetime(2025, 4, 30, 12, 25, 27)  # Using provided timestamp
         now = datetime.now()
         today_start = datetime(now.year, now.month, now.day)
         today_end = today_start + timedelta(days=1)
         today_day_of_week = now.weekday()
-        # today_day_of_week = 1 # lock at tuesday for testing
 
         # Get all events for today
         today_events = (
@@ -90,7 +89,12 @@ def get_schedule_diff(db: Session = Depends(get_db)):
                 Appointment.start_time,
             )
             .join(Event.appointment)
-            .filter(and_(Event.created_at >= today_start, Event.created_at < today_end))
+            .filter(
+                and_(
+                    Event.created_at >= today_start, 
+                    Event.created_at < today_end, 
+                    or_(Event.old_time <= today_end, Event.new_time < today_end)
+                ))
             .order_by(Event.created_at)
             .all()
         )
@@ -120,33 +124,31 @@ def get_schedule_diff(db: Session = Depends(get_db)):
             if event.new_time:
                 new_hour = event.new_time.strftime("%H:%M")
 
-            if old_hour not in hourly_diffs.keys() and new_hour not in hourly_diffs.keys():
-                print(f"skipping {event.id}")
-                print(event.to_dict())
-                
-                continue
-
             simpleEvent = {
                             "id": event.appointment_id,
                             "first_name": first_name,
                             "last_name": last_name,
                         }
 
-            match event.action:
-                case EventAction.schedule:
-                    hourly_diffs[new_hour]["added"].append(simpleEvent)
-                case EventAction.cancel:
-                    hourly_diffs[old_hour]["deleted"].append(simpleEvent)
-                case EventAction.reschedule_same_day:
-                    hourly_diffs[old_hour]["deleted"].append(simpleEvent)
-                    hourly_diffs[new_hour]["added"].append(simpleEvent)
-                case EventAction.reschedule_incoming:
-                    hourly_diffs[new_hour]["added"].append(simpleEvent)
-                case EventAction.reschedule_outgoing:
-                    hourly_diffs[old_hour]["deleted"].append(simpleEvent)
-                case _:
-                    print(f"Unknown action: {event.action} for id {event.id}")
-
+            try:
+                match event.action:
+                    case EventAction.schedule:
+                        hourly_diffs[new_hour]["added"].append(simpleEvent)
+                    case EventAction.cancel:
+                        hourly_diffs[old_hour]["deleted"].append(simpleEvent)
+                    case EventAction.reschedule_same_day:
+                        hourly_diffs[old_hour]["deleted"].append(simpleEvent)
+                        hourly_diffs[new_hour]["added"].append(simpleEvent)
+                    case EventAction.reschedule_incoming:
+                        hourly_diffs[new_hour]["added"].append(simpleEvent)
+                    case EventAction.reschedule_outgoing:
+                        hourly_diffs[old_hour]["deleted"].append(simpleEvent)
+                    case _:
+                        print(f"Unknown action: {event.action} for id {event.id}")
+            except Exception as e: 
+                print(f"skipping {event.to_dict()}")
+                print(e)
+                
         return list(hourly_diffs.values())
 
     except Exception as e:
