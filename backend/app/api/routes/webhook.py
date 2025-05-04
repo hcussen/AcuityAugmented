@@ -7,7 +7,6 @@ import requests
 from datetime import datetime
 from app.config import settings
 import json
-import traceback
 import logging
 
 logger = logging.getLogger(__name__)
@@ -15,14 +14,14 @@ logger = logging.getLogger(__name__)
 from app.core.acuityClient import acuity_client
 
 from app.database import get_db
-from app.models import Appointment, Event, EventAction
+from app.models import Appointment 
 from app.core.apptActions import (
+    isToday,
     handle_reschedule_same_day,
     handle_schedule,
-    isToday,
-    createNewAppointment,
-    updateStartTime,
-    markAsCanceled,
+    handle_cancel,
+    handle_reschedule_incoming,
+    handle_reschedule_outgoing,
 )
 
 router = APIRouter(prefix="/webhook", tags=["webhook"])
@@ -93,16 +92,12 @@ async def handle_appt_changed(
         elif appt_details["canceled"]:
            event = handle_cancel(existing_appt, db)
         elif isToday(appt_details["datetime"]):
-            # Convert to naive datetime for database storage
-            new_time = datetime.fromisoformat(appt_details["datetime"]).replace(
-                tzinfo=None
-            )
             if isToday(existing_appt.start_time):
-                event = handle_reschedule_same_day(existing_appt, new_time, db)
+                event = handle_reschedule_same_day(existing_appt, appt_details, db)
             else:
-                event = handle_reschedule_incoming(existing_appt, new_time, db)
+                event = handle_reschedule_incoming(existing_appt, appt_details, db)
         elif not isToday(appt_details["datetime"]):
-            event = handle_reschedule_outgoing(existing_appt, new_time, db)
+            event = handle_reschedule_outgoing(existing_appt, appt_details, db)
         else:
             logger.error("Unexpected appointment state")
             raise Exception("existing appt - Shouldn't end up here")
