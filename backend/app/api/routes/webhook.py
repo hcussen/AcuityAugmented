@@ -77,25 +77,22 @@ async def handle_appt_changed(
                 status_code=500, detail=f"Failed to fetch appointment details: {str(e)}"
             )
 
-        old_time = None
-        new_time = None
         event = None
-        if not existing_appt:
-            if not isToday(appt_details["datetime"]):
+        if not existing_appt and not isToday(appt_details["datetime"]):
                 logger.info("Appt %s doesn't deal with today", id)
                 return {
                     "status": "passed",
                     "message": f"Appt {id} doesn't deal with today",
                 }
-            else:
-                event = handle_schedule(appt_details, db)
+        elif not existing_appt and isToday(appt_details["datetime"]):
+            event = handle_schedule(appt_details, db)
         elif appt_details["canceled"]:
-           event = handle_cancel(existing_appt, db)
-        elif isToday(appt_details["datetime"]):
-            if isToday(existing_appt.start_time):
-                event = handle_reschedule_same_day(existing_appt, appt_details, db)
-            else:
-                event = handle_reschedule_incoming(existing_appt, appt_details, db)
+            event = handle_cancel(existing_appt, db)
+        elif isToday(appt_details["datetime"]) and isToday(existing_appt.start_time):
+            event = handle_reschedule_same_day(existing_appt, appt_details, db)
+        elif isToday(appt_details["datetime"]) and not isToday(existing_appt.start_time):
+            # why this would happen, I'm not sure. But I'm handling it 
+            event = handle_reschedule_incoming(existing_appt, appt_details, db)
         elif not isToday(appt_details["datetime"]):
             event = handle_reschedule_outgoing(existing_appt, appt_details, db)
         else:
