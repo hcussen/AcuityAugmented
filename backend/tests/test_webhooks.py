@@ -60,7 +60,6 @@ def appointment_details():
 class TestWebhooks:
 
     def test_not_from_calendar_of_interest(self, db_session, test_client, patched_acuity_client):
-
         response = test_client.post('/webhook/appt-changed',
                          data={
                              'action': 'changed',
@@ -68,7 +67,6 @@ class TestWebhooks:
                              'calendarID': '12345',
                              'type': '77085032'
                          })
-        
         assert response.status_code == 200
         content = response.json()
         assert content['status'] == 'passed'
