@@ -23,7 +23,7 @@ def pytest_addoption(parser):
     parser.addoption(  
         "--dburl",  # For Postgres use "postgresql://user:password@localhost/dbname"  
         action="store",  
-        default="sqlite+pysqlite:///./test.db'",   
+        default="sqlite+pysqlite:///./test.db",   
         help="Database URL to use for tests.",  
     )  
   
