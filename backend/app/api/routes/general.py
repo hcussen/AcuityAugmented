@@ -170,5 +170,6 @@ def get_schedule_diff(db: Session = Depends(get_db)) -> List[HourlyDiff]:
         return list(hourly_diffs.values())
 
     except Exception as e:
+        db.rollback()
         logger.error(f"Error in get_schedule_diff: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
