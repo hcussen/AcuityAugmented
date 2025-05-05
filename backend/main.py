@@ -19,20 +19,5 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers or specify needed ones
 )
 
-
-# Add a simple root endpoint
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-@app.get("/healthcheck")
-def read_root():
-     return {"status": "ok"}
-
-@app.get("/protected-endpoint", dependencies=[Depends(get_api_key)])
-async def protected_endpoint():
-    return {"message": "You have access to the protected endpoint"}
-
-
 # Include all API routes
 app.include_router(api_router)

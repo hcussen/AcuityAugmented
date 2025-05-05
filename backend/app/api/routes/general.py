@@ -42,6 +42,21 @@ class HourlyDiff(BaseModel):
     deleted: List[SimpleEvent] = []
 
 
+# Add a simple root endpoint
+@router.get("/")
+async def root():
+    return {"message": "Hello World"}
+
+@router.get("/healthcheck")
+def read_root():
+     return {"status": "ok"}
+
+@router.get("/protected-endpoint", dependencies=[Depends(get_api_key)])
+async def protected_endpoint():
+    return {"message": "You have access to the protected endpoint"}
+
+
+
 @router.post("/appointment")
 def create_appointment(appt: AppointmentCreate, db: Session = Depends(get_db)):
     try:
