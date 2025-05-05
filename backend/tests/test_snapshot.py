@@ -199,30 +199,16 @@ class TestSnapshot:
         
         # Create initial appointments in the database
         initial_appointments = [
-            Appointment(
-                acuity_id=12345,
-                first_name="Keep",
-                last_name="One",
-                start_time=datetime.fromisoformat("2025-04-26T10:00:00-0600"),  # Today
-                is_canceled=False,
-                last_modified_here=datetime.now()
-            ),
-            Appointment(
-                acuity_id=12346,
-                first_name="Keep",
-                last_name="Two",
-                start_time=datetime.fromisoformat("2025-04-26T14:00:00-0600"),  # Today
-                is_canceled=False,
-                last_modified_here=datetime.now()
-            )
+            create_appointment_details(0),
+            create_appointment_details(1),
         ]
         
         for appt in initial_appointments:
-            db_session.add(appt)
+            db_session.add(acuity_to_appointment(AcuityAppointment(**appt)))
         db_session.commit()
 
         # Mock the Acuity API to return both appointments
-        mock_api_response = [create_appointment_details(0), create_appointment_details(1)]
+        mock_api_response = initial_appointments
         for appt in mock_api_response:
             patched_acuity_client.add_appointment(appt)
 
