@@ -2,18 +2,14 @@ from fastapi import APIRouter, Form, Depends, HTTPException
 from typing import Optional
 from app.types import AcuityAppointment
 from sqlalchemy.orm import Session
-from sqlalchemy import select
-import requests
+from sqlalchemy import and_
 from datetime import datetime 
 
-import traceback
-from typing import List 
 from app.core.acuityClient import acuity_client
 from app.core.type_conversion import acuity_to_appointment
 from app.database import get_db
 from app.models import Appointment, Snapshot
-from sqlalchemy.dialects.sqlite import JSON
-
+from app.core.time_utils import get_today_boundaries
 
 router = APIRouter(
     prefix="/acuity",
@@ -24,7 +20,7 @@ router = APIRouter(
 def get_acuity_appointment(id: str):
     return acuity_client.get_appointment(id)
 
-@router.get("/snapshot")
+@router.post("/snapshot")
 def take_snapshot(db: Session = Depends(get_db)):
     try: 
         appointments = acuity_client.get_appointments()
@@ -34,6 +30,21 @@ def take_snapshot(db: Session = Depends(get_db)):
             dump=appointments
         )
         db.add(snapshot)
+        
+        # Get all Acuity IDs from the current API response
+        current_acuity_ids = {appt['id'] for appt in appointments}
+        
+        # Find and delete appointments that no longer exist in Acuity
+        today_start, today_end, _ = get_today_boundaries()
+        deleted_count = db.query(Appointment).filter(
+            and_(
+                Appointment.acuity_id.notin_(current_acuity_ids),
+                Appointment.start_time >= today_start,
+                Appointment.start_time < today_end,
+            )
+        ).delete(synchronize_session=False)
+        # ).count()
+        # print(f"Deleted {deleted_count} appointments")
         
         # Create individual appointment records
         for appt_data in appointments:
@@ -57,7 +68,11 @@ def take_snapshot(db: Session = Depends(get_db)):
 
         db.commit()
         db.refresh(snapshot)
-        return {"message": "Snapshot and appointments saved successfully", "count": len(appointments)}
+        return {
+            "message": "Snapshot and appointments saved successfully",
+            "count": len(appointments),
+            "deleted_count": deleted_count
+        }
 
     except Exception as e:
         db.rollback()  # Rollback any changes if there's an error

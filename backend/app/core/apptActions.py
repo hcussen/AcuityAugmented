@@ -4,19 +4,6 @@ from datetime import datetime
 from app.models import Appointment, Event, EventAction
 from app.core.type_conversion import acuity_to_appointment
 
-def isToday(timestamp_string: str) -> bool:
-    '''takes in a date in the format 2025-06-03T19:00:00-0600'''
-    # Parse the input timestamp
-    timestamp = datetime.fromisoformat(str(timestamp_string))
-    
-    # Get today's date
-    today = datetime.now()
-    
-    # Compare year, month, and day
-    return (timestamp.year == today.year and
-            timestamp.month == today.month and
-            timestamp.day == today.day)
-
 def createNewAppointment(appt: AcuityAppointment, db):
     newAppt = AcuityAppointment(**appt)
     db_appointment = acuity_to_appointment(newAppt)

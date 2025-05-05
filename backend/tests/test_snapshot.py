@@ -4,9 +4,13 @@ from app.models import Appointment, Snapshot
 from sqlalchemy import select
 from freezegun import freeze_time
 from app.config import settings
+from app.core.type_conversion import acuity_to_appointment
+from app.types import AcuityAppointment
 
 
-def create_appointment_details(num):
+def create_appointment_details(num) -> AcuityAppointment:
+    '''returns an appointment dict for an appointment at 7pm + num on April 25, 2025'''
+
     return {
         "id": 12345 + num,
         "firstName": f"Meredith{num}",
@@ -63,7 +67,7 @@ class TestSnapshot:
             patched_acuity_client.add_appointment(appt)
 
         # Call the snapshot endpoint
-        response = test_client.get('/acuity/snapshot')
+        response = test_client.post('/acuity/snapshot')
         
         # Verify response
         assert response.status_code == 200
@@ -105,7 +109,7 @@ class TestSnapshot:
             patched_acuity_client.add_appointment(appt)
 
         # Take first snapshot
-        response = test_client.get('/acuity/snapshot')
+        response = test_client.post('/acuity/snapshot')
         assert response.status_code == 200
         content = response.json()
         assert content["count"] == 2
@@ -126,7 +130,7 @@ class TestSnapshot:
             patched_acuity_client.add_appointment(appt)
 
         # Take second snapshot
-        response = test_client.get('/acuity/snapshot')
+        response = test_client.post('/acuity/snapshot')
         assert response.status_code == 200
         content = response.json()
         assert content["count"] == 5  # Should now have all 5 appointments
@@ -154,6 +158,112 @@ class TestSnapshot:
             assert appointment.duration == int(appt_data["duration"])
             assert appointment.is_canceled == appt_data["canceled"]
 
+    @freeze_time("2025-04-25")
+    def test_appointments_deleted_when_not_in_api(self, db_session, test_client, patched_acuity_client):
+        """Test that appointments not present in the API response and with start_time today or earlier are deleted"""
+        
+        # Create initial appointments in the database
+        initial_appointments = [
+            create_appointment_details(0),
+            create_appointment_details(1),
+            create_appointment_details(2),
+        ]
+        
+        for appt in initial_appointments:
+            db_session.add(acuity_to_appointment(AcuityAppointment(**appt)))
+        db_session.commit()
+
+        # confirm that the appts were created in db 
+        appointments = db_session.query(Appointment).all()
+        assert len(appointments) == 3
+
+        # Mock the Acuity API to return only one appointment (ID 12345)
+        mock_api_response = [create_appointment_details(0)]
+        for appt in mock_api_response:
+            patched_acuity_client.add_appointment(appt)
+
+        # Take a new snapshot
+        response = test_client.post('/acuity/snapshot')
+        
+        assert response.status_code == 200
+        content = response.json()
+        print(content)
+        assert content["deleted_count"] == 2  # Two appointments should be deleted (ID 12346 and 12347)
+        
+        # Verify the right appointments remain
+        remaining_appointments = db_session.query(Appointment).order_by(Appointment.acuity_id).all()
+        assert len(remaining_appointments) == 1
+        assert [a.acuity_id for a in remaining_appointments] == [12345]  # Today's kept appt and future appt
+
+    @freeze_time("2025-04-26")
+    def test_no_appointments_deleted_when_all_present(self, db_session, test_client, patched_acuity_client):
+        """Test that no appointments are deleted when all are present in API response"""
+        
+        # Create initial appointments in the database
+        initial_appointments = [
+            create_appointment_details(0),
+            create_appointment_details(1),
+        ]
+        
+        for appt in initial_appointments:
+            db_session.add(acuity_to_appointment(AcuityAppointment(**appt)))
+        db_session.commit()
+
+        # Mock the Acuity API to return both appointments
+        mock_api_response = initial_appointments
+        for appt in mock_api_response:
+            patched_acuity_client.add_appointment(appt)
+
+        # Take a new snapshot
+        response = test_client.post('/acuity/snapshot')
+        
+        assert response.status_code == 200
+        content = response.json()
+        assert content["deleted_count"] == 0  # No appointments should be deleted
+        
+        # Verify both appointments still exist
+        remaining_appointments = db_session.query(Appointment).order_by(Appointment.acuity_id).all()
+        assert len(remaining_appointments) == 2
+        assert [a.acuity_id for a in remaining_appointments] == [12345, 12346]
+
+    @freeze_time("2025-04-26")
+    def test_non_today_appointments_not_deleted(self, db_session, test_client, patched_acuity_client):
+        """Test that future and past appointments are not deleted even if missing from API"""
+        
+        # Create initial appointments in the database
+        initial_appointments = [
+            create_appointment_details(0),
+            create_appointment_details(1),
+            create_appointment_details(2),
+            create_appointment_details(3),
+        ]
+
+        initial_appointments[0]['datetime'] = '2025-04-24T14:00:00-0600' # yesterday
+        initial_appointments[1]['datetime'] = '2025-04-25T14:00:00-0600' # today
+        initial_appointments[2]['datetime'] = '2025-04-26T14:00:00-0600' # today, will be deleted
+        initial_appointments[3]['datetime'] = '2025-04-27T14:00:00-0600' # tomorrow
+        
+        for appt in initial_appointments:
+            db_session.add(acuity_to_appointment(AcuityAppointment(**appt)))
+        db_session.commit()
+
+        # Mock the Acuity API to return only initial_appointments[1]
+        mock_api_response = [initial_appointments[1]]
+        for appt in mock_api_response:
+            patched_acuity_client.add_appointment(appt)
+        
+        # Take a new snapshot
+        response = test_client.post('/acuity/snapshot')
+        
+        assert response.status_code == 200
+        content = response.json()
+        assert content["deleted_count"] == 1  # Only today's appointment 12347 should be deleted
+        
+        # Verify all appointments remains
+        remaining_appointments = db_session.query(Appointment).all()
+        assert len(remaining_appointments) == 3
+        assert [a.acuity_id for a in remaining_appointments] == [12345, 12346, 12348]
+
     @freeze_time("2025-04-26")
     def test_snapshot_with_updates(self, db_session, test_client, patched_acuity_client):
         # First snapshot with initial appointments
@@ -166,7 +276,7 @@ class TestSnapshot:
             patched_acuity_client.add_appointment(appt)
 
         # Take first snapshot
-        response = test_client.get('/acuity/snapshot')
+        response = test_client.post('/acuity/snapshot')
         assert response.status_code == 200
         content = response.json()
         assert content["count"] == 2
@@ -196,7 +306,7 @@ class TestSnapshot:
         patched_acuity_client.add_appointment(new_appointment)  
         
         # Take second snapshot
-        response = test_client.get('/acuity/snapshot')
+        response = test_client.post('/acuity/snapshot')
         assert response.status_code == 200
         content = response.json()
         assert content["count"] == 3
