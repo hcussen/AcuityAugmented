@@ -6,9 +6,9 @@ from typing import Dict, List, Tuple, Optional
 from sqlalchemy import and_, or_
 from logging import getLogger
 from uuid import UUID
-import traceback
 
 from app.config import settings
+from app.core.auth import get_api_key
 from app.database import get_db
 from app.models import Appointment, Event, EventAction
 from app.core.time_utils import get_today_boundaries
@@ -42,7 +42,6 @@ class HourlyDiff(BaseModel):
     deleted: List[SimpleEvent] = []
 
 
-# Add a simple root endpoint
 @router.get("/")
 async def root():
     return {"message": "Hello World"}
@@ -54,7 +53,6 @@ def read_root():
 @router.get("/protected-endpoint", dependencies=[Depends(get_api_key)])
 async def protected_endpoint():
     return {"message": "You have access to the protected endpoint"}
-
 
 
 @router.post("/appointment")
