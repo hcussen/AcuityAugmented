@@ -23,6 +23,11 @@ app.add_middleware(
 async def root():
     return {"message": "Hello World"}
 
+@app.get("/healthcheck")
+def read_root():
+     return {"status": "ok"}
+
+
 
 # Include all API routes
 app.include_router(api_router)
