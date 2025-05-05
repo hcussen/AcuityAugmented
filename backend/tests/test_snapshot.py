@@ -9,6 +9,8 @@ from app.types import AcuityAppointment
 
 
 def create_appointment_details(num) -> AcuityAppointment:
+    '''returns an appointment dict for an appointment at 7pm + num on April 25, 2025'''
+
     return {
         "id": 12345 + num,
         "firstName": f"Meredith{num}",
@@ -225,47 +227,42 @@ class TestSnapshot:
         assert [a.acuity_id for a in remaining_appointments] == [12345, 12346]
 
     @freeze_time("2025-04-26")
-    def test_future_appointments_not_deleted(self, db_session, test_client, patched_acuity_client):
-        """Test that future appointments are not deleted even if missing from API"""
+    def test_non_today_appointments_not_deleted(self, db_session, test_client, patched_acuity_client):
+        """Test that future and past appointments are not deleted even if missing from API"""
         
         # Create initial appointments in the database
         initial_appointments = [
-            Appointment(
-                acuity_id=12345,
-                first_name="Today",
-                last_name="Appt",
-                start_time=datetime.fromisoformat("2025-04-26T14:00:00-0600"),  # Today
-                is_canceled=False,
-                last_modified_here=datetime.now()
-            ),
-            Appointment(
-                acuity_id=12346,
-                first_name="Future",
-                last_name="Appt",
-                start_time=datetime.fromisoformat("2025-04-27T14:00:00-0600"),  # Tomorrow
-                is_canceled=False,
-                last_modified_here=datetime.now()
-            )
+            create_appointment_details(0),
+            create_appointment_details(1),
+            create_appointment_details(2),
+            create_appointment_details(3),
         ]
+
+        initial_appointments[0]['datetime'] = '2025-04-24T14:00:00-0600' # yesterday
+        initial_appointments[1]['datetime'] = '2025-04-25T14:00:00-0600' # today
+        initial_appointments[2]['datetime'] = '2025-04-26T14:00:00-0600' # today, will be deleted
+        initial_appointments[3]['datetime'] = '2025-04-27T14:00:00-0600' # tomorrow
         
         for appt in initial_appointments:
-            db_session.add(appt)
+            db_session.add(acuity_to_appointment(AcuityAppointment(**appt)))
         db_session.commit()
 
-        # Mock the Acuity API to return no appointments
-        mock_api_response = []
+        # Mock the Acuity API to return only initial_appointments[1]
+        mock_api_response = [initial_appointments[1]]
+        for appt in mock_api_response:
+            patched_acuity_client.add_appointment(appt)
         
         # Take a new snapshot
         response = test_client.post('/acuity/snapshot')
         
         assert response.status_code == 200
         content = response.json()
-        assert content["deleted_count"] == 1  # Only today's appointment should be deleted
+        assert content["deleted_count"] == 1  # Only today's appointment 12347 should be deleted
         
-        # Verify only future appointment remains
+        # Verify all appointments remains
         remaining_appointments = db_session.query(Appointment).all()
-        assert len(remaining_appointments) == 1
-        assert remaining_appointments[0].acuity_id == 12346  # Future appointment
+        assert len(remaining_appointments) == 3
+        assert [a.acuity_id for a in remaining_appointments] == [12345, 12346, 12348]
 
     @freeze_time("2025-04-26")
     def test_snapshot_with_updates(self, db_session, test_client, patched_acuity_client):
