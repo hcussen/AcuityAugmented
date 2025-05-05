@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Dict, List, Tuple, Optional
 from sqlalchemy import and_, or_
-from logging import getLogger
 from uuid import UUID
 
 from app.config import settings
@@ -13,6 +12,7 @@ from app.database import get_db
 from app.models import Appointment, Event, EventAction
 from app.core.time_utils import get_today_boundaries
 
+from logging import getLogger
 logger = getLogger(__name__)
 
 router = APIRouter(

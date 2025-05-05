@@ -11,6 +11,9 @@ from app.database import get_db
 from app.models import Appointment, Snapshot
 from app.core.time_utils import get_today_boundaries
 
+from logging import getLogger
+logger = getLogger(__name__)
+
 router = APIRouter(
     prefix="/acuity",
     tags=["acuity"]
@@ -43,8 +46,6 @@ def take_snapshot(db: Session = Depends(get_db), api_key: str = Depends(get_api_
                 Appointment.start_time < today_end,
             )
         ).delete(synchronize_session=False)
-        # ).count()
-        # print(f"Deleted {deleted_count} appointments")
         
         # Create individual appointment records
         for appt_data in appointments:
@@ -77,5 +78,6 @@ def take_snapshot(db: Session = Depends(get_db), api_key: str = Depends(get_api_
     except Exception as e:
         db.rollback()  # Rollback any changes if there's an error
         import traceback
+        logger.error(f"Error in take_snapshot: {str(e)}", exc_info=True)
         stack_trace = traceback.format_exc()
         raise HTTPException(status_code=400, detail={"error": str(e), "stack_trace": stack_trace})

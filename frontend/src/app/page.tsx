@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useMemo } from "react"
 import { HourlyDiff, Appointment } from "@/lib/types"
-import { apiClient } from "@/lib/api-client"
 import { PlusCircle, MinusCircle } from "lucide-react"
 import {
   Table,
@@ -13,12 +12,14 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
+import { getScheduleDiff, getSchedule, takeSnapshot } from "@/lib/api-actions"
 
 export default function Home() {
   const [scheduleDiff, setScheduleDiff] = useState<Array<HourlyDiff> | null>(
     null
   )
   const [schedule, setSchedule] = useState<Appointment[] | null>(null)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
 
   const appointmentsByHour = useMemo(() => {
     if (!schedule) return null
@@ -60,20 +61,24 @@ export default function Home() {
     }))
   }, [schedule])
 
-  const takeSnapshot = async () => {
+  const handleTakeSnapshot = async () => {
     try {
-      const message = await apiClient.takeSnapshot()
+      setIsLoading(true)
+      const message = await takeSnapshot()
       console.log(message)
     } catch (error) {
       console.error("Error taking snapshot", error)
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const fetchSchedule = async () => {
+  const fetchScheduleData = async () => {
     try {
-      const scheduleData = await apiClient.getSchedule()
+      setIsLoading(true)
+      const scheduleData = await getSchedule()
       // Parse date strings into Date objects
-      const parsedSchedule = scheduleData.map((appointment) => ({
+      const parsedSchedule = scheduleData.map((appointment: Appointment) => ({
         ...appointment,
         start_time: new Date(appointment.start_time),
         acuity_created_at: new Date(appointment.acuity_created_at),
@@ -86,13 +91,15 @@ export default function Home() {
       setSchedule(parsedSchedule)
     } catch (error) {
       console.error("Error fetching schedule:", error)
+    } finally {
+      setIsLoading(false)
     }
   }
 
   useEffect(() => {
     const fetchDiff = async () => {
       try {
-        const diffData = await apiClient.getScheduleDiff()
+        const diffData = await getScheduleDiff()
         setScheduleDiff(diffData)
       } catch (error) {
         console.error("Error fetching diff:", error)
@@ -115,14 +122,19 @@ export default function Home() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Today's Schedule Changes</h1>
           <div className="flex gap-2">
-            <Button onClick={takeSnapshot} variant="outline">
-              Take Snapshot
+            <Button
+              onClick={handleTakeSnapshot}
+              variant="outline"
+              disabled={isLoading}
+            >
+              {isLoading ? "Processing..." : "Take Snapshot"}
             </Button>
             <Button
-              className=" bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-              onClick={fetchSchedule}
+              className="bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+              onClick={fetchScheduleData}
+              disabled={isLoading}
             >
-              Fetch Schedule
+              {isLoading ? "Loading..." : "Fetch Schedule"}
             </Button>
           </div>
         </div>
@@ -209,7 +221,11 @@ export default function Home() {
                     </TableCell>
                     <TableCell>{hourData.appointments.length}</TableCell>
                     <TableCell>
-                      {nonDummyByHour && nonDummyByHour[idx].count}
+                      {(nonDummyByHour &&
+                        nonDummyByHour.find(
+                          (item) => item.hour === hourData.hour
+                        )?.count) ||
+                        0}
                     </TableCell>
                   </TableRow>
                 ))}
