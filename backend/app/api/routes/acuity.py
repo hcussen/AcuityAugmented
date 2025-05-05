@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Form, Depends, HTTPException
-from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException
 from app.types import AcuityAppointment
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from datetime import datetime 
 
+from app.core.auth import get_api_key
 from app.core.acuityClient import acuity_client
 from app.core.type_conversion import acuity_to_appointment
 from app.database import get_db
@@ -17,11 +17,11 @@ router = APIRouter(
 )
 
 @router.get("/appointment")
-def get_acuity_appointment(id: str):
+def get_acuity_appointment(id: str, api_key: str = Depends(get_api_key)):
     return acuity_client.get_appointment(id)
 
 @router.post("/snapshot")
-def take_snapshot(db: Session = Depends(get_db)):
+def take_snapshot(db: Session = Depends(get_db), api_key: str = Depends(get_api_key)):
     try: 
         appointments = acuity_client.get_appointments()
         

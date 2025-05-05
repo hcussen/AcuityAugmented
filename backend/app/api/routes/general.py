@@ -56,7 +56,7 @@ async def protected_endpoint():
 
 
 @router.post("/appointment")
-def create_appointment(appt: AppointmentCreate, db: Session = Depends(get_db)):
+def create_appointment(appt: AppointmentCreate, db: Session = Depends(get_db), api_key: str = Depends(get_api_key)):
     try:
         db_appointment = Appointment(
             id=appt.id,
@@ -76,7 +76,7 @@ def create_appointment(appt: AppointmentCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/schedule")
-def get_schedule(db: Session = Depends(get_db)):
+def get_schedule(db: Session = Depends(get_db), api_key: str = Depends(get_api_key)):
     try:
         today_start, today_end, _ = get_today_boundaries()
 
@@ -145,7 +145,7 @@ def _process_event(
 
 
 @router.get("/schedule/diff", response_model=List[HourlyDiff])
-def get_schedule_diff(db: Session = Depends(get_db)) -> List[HourlyDiff]:
+def get_schedule_diff(db: Session = Depends(get_db), api_key: str = Depends(get_api_key)) -> List[HourlyDiff]:
     try:
         today_start, today_end, today_day_of_week = get_today_boundaries()
         
