@@ -1,10 +1,13 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import logging
 
+from sqlalchemy import URL
+
+
 
 class Settings(BaseSettings):
     # Add database URL for SQLAlchemy
-    database_url: str = 'sqlite+pysqlite:///db.db'
+    database_url: str
 
     # You can add other settings as needed
     env_name: str = "dev"
