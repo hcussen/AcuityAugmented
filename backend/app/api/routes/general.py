@@ -23,7 +23,8 @@ router = APIRouter(
 
 # Request model for appointment creation
 class AppointmentCreate(BaseModel):
-    id: int
+    id: str
+    acuity_id: int
     first_name: str
     last_name: str
     start_time: datetime
@@ -46,6 +47,7 @@ def create_appointment(appt: AppointmentCreate, db: Session = Depends(get_db)):
     try:
         db_appointment = Appointment(
             id=appt.id,
+            acuity_id=appt.acuity_id,
             first_name=appt.first_name,
             last_name=appt.last_name,
             start_time=appt.start_time,
