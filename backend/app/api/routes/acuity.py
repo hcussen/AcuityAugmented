@@ -9,6 +9,7 @@ from app.core.acuityClient import acuity_client
 from app.core.type_conversion import acuity_to_appointment
 from app.database import get_db
 from app.models import Appointment, Snapshot
+from app.core.time_utils import get_today_boundaries
 
 router = APIRouter(
     prefix="/acuity",
@@ -34,13 +35,16 @@ def take_snapshot(db: Session = Depends(get_db)):
         current_acuity_ids = {appt['id'] for appt in appointments}
         
         # Find and delete appointments that no longer exist in Acuity
+        today_start, today_end, _ = get_today_boundaries()
         deleted_count = db.query(Appointment).filter(
             and_(
                 Appointment.acuity_id.notin_(current_acuity_ids),
-                Appointment.is_canceled == True,
-                Appointment.start_time < datetime.now(),
+                Appointment.start_time >= today_start,
+                Appointment.start_time < today_end,
             )
         ).delete(synchronize_session=False)
+        # ).count()
+        # print(f"Deleted {deleted_count} appointments")
         
         # Create individual appointment records
         for appt_data in appointments:

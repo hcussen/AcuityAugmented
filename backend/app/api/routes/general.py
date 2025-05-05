@@ -11,6 +11,7 @@ import traceback
 from app.config import settings
 from app.database import get_db
 from app.models import Appointment, Event, EventAction
+from app.core.time_utils import get_today_boundaries
 
 logger = getLogger(__name__)
 
@@ -62,10 +63,7 @@ def create_appointment(appt: AppointmentCreate, db: Session = Depends(get_db)):
 @router.get("/schedule")
 def get_schedule(db: Session = Depends(get_db)):
     try:
-        # Get current date boundaries
-        now = datetime.now()
-        today_start = datetime(now.year, now.month, now.day)
-        today_end = today_start + timedelta(days=1)
+        today_start, today_end, _ = get_today_boundaries()
 
         return (
             db.query(Appointment)
@@ -81,14 +79,6 @@ def get_schedule(db: Session = Depends(get_db)):
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-
-def _get_today_boundaries() -> Tuple[datetime, datetime, int]:
-    now = datetime.now()
-    today_start = datetime(now.year, now.month, now.day)
-    today_end = today_start + timedelta(days=1)
-    today_day_of_week = now.weekday()
-    return today_start, today_end, today_day_of_week
 
 
 def _initialize_hourly_diffs(day_of_week: int) -> Dict[str, HourlyDiff]:
@@ -142,7 +132,7 @@ def _process_event(
 @router.get("/schedule/diff", response_model=List[HourlyDiff])
 def get_schedule_diff(db: Session = Depends(get_db)) -> List[HourlyDiff]:
     try:
-        today_start, today_end, today_day_of_week = _get_today_boundaries()
+        today_start, today_end, today_day_of_week = get_today_boundaries()
         
         today_events = (
             db.query(

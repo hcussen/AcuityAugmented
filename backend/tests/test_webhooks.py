@@ -3,7 +3,7 @@ from freezegun import freeze_time
 from datetime import datetime, timedelta
 from app.config import settings
 from app.models import Event, EventAction, Appointment
-from app.core.apptActions import isToday
+from app.core.time_utils import isToday
 import json
 from sqlalchemy import select
 import uuid

@@ -16,13 +16,13 @@ from app.core.acuityClient import acuity_client
 from app.database import get_db
 from app.models import Appointment 
 from app.core.apptActions import (
-    isToday,
     handle_reschedule_same_day,
     handle_schedule,
     handle_cancel,
     handle_reschedule_incoming,
     handle_reschedule_outgoing,
 )
+from app.core.time_utils import isToday
 
 router = APIRouter(prefix="/webhook", tags=["webhook"])
 
