@@ -1,15 +1,18 @@
-from fastapi import APIRouter, Form, Depends, HTTPException
-from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException
 from app.types import AcuityAppointment
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from datetime import datetime 
 
+from app.core.auth import get_api_key
 from app.core.acuityClient import acuity_client
 from app.core.type_conversion import acuity_to_appointment
 from app.database import get_db
 from app.models import Appointment, Snapshot
 from app.core.time_utils import get_today_boundaries
+
+from logging import getLogger
+logger = getLogger(__name__)
 
 router = APIRouter(
     prefix="/acuity",
@@ -17,11 +20,11 @@ router = APIRouter(
 )
 
 @router.get("/appointment")
-def get_acuity_appointment(id: str):
+def get_acuity_appointment(id: str, api_key: str = Depends(get_api_key)):
     return acuity_client.get_appointment(id)
 
 @router.post("/snapshot")
-def take_snapshot(db: Session = Depends(get_db)):
+def take_snapshot(db: Session = Depends(get_db), api_key: str = Depends(get_api_key)):
     try: 
         appointments = acuity_client.get_appointments()
         
@@ -43,8 +46,6 @@ def take_snapshot(db: Session = Depends(get_db)):
                 Appointment.start_time < today_end,
             )
         ).delete(synchronize_session=False)
-        # ).count()
-        # print(f"Deleted {deleted_count} appointments")
         
         # Create individual appointment records
         for appt_data in appointments:
@@ -77,5 +78,6 @@ def take_snapshot(db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()  # Rollback any changes if there's an error
         import traceback
+        logger.error(f"Error in take_snapshot: {str(e)}", exc_info=True)
         stack_trace = traceback.format_exc()
         raise HTTPException(status_code=400, detail={"error": str(e), "stack_trace": stack_trace})

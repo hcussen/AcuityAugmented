@@ -4,15 +4,15 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Dict, List, Tuple, Optional
 from sqlalchemy import and_, or_
-from logging import getLogger
 from uuid import UUID
-import traceback
 
 from app.config import settings
+from app.core.auth import get_api_key
 from app.database import get_db
 from app.models import Appointment, Event, EventAction
 from app.core.time_utils import get_today_boundaries
 
+from logging import getLogger
 logger = getLogger(__name__)
 
 router = APIRouter(
@@ -42,8 +42,21 @@ class HourlyDiff(BaseModel):
     deleted: List[SimpleEvent] = []
 
 
+@router.get("/")
+async def root():
+    return {"message": "Hello World"}
+
+@router.get("/healthcheck")
+def read_root():
+     return {"status": "ok"}
+
+@router.get("/protected-endpoint")
+async def protected_endpoint(api_key: str = Depends(get_api_key)):
+    return {"message": "You have access to the protected endpoint"}
+
+
 @router.post("/appointment")
-def create_appointment(appt: AppointmentCreate, db: Session = Depends(get_db)):
+def create_appointment(appt: AppointmentCreate, db: Session = Depends(get_db), api_key: str = Depends(get_api_key)):
     try:
         db_appointment = Appointment(
             id=appt.id,
@@ -63,7 +76,7 @@ def create_appointment(appt: AppointmentCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/schedule")
-def get_schedule(db: Session = Depends(get_db)):
+def get_schedule(db: Session = Depends(get_db), api_key: str = Depends(get_api_key)):
     try:
         today_start, today_end, _ = get_today_boundaries()
 
@@ -132,7 +145,7 @@ def _process_event(
 
 
 @router.get("/schedule/diff", response_model=List[HourlyDiff])
-def get_schedule_diff(db: Session = Depends(get_db)) -> List[HourlyDiff]:
+def get_schedule_diff(db: Session = Depends(get_db), api_key: str = Depends(get_api_key)) -> List[HourlyDiff]:
     try:
         today_start, today_end, today_day_of_week = get_today_boundaries()
         
