@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from typing import Dict, List, Tuple, Optional
 from sqlalchemy import and_, or_
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from app.config import settings
 from app.core.auth import get_api_key
@@ -79,8 +80,9 @@ def create_appointment(appt: AppointmentCreate, db: Session = Depends(get_db), a
 def get_schedule(db: Session = Depends(get_db), api_key: str = Depends(get_api_key)):
     try:
         today_start, today_end, _ = get_today_boundaries()
-
-        return (
+        
+        # Get appointments from database (they're in UTC)
+        appointments = (
             db.query(Appointment)
             .filter(
                 and_(
@@ -91,8 +93,26 @@ def get_schedule(db: Session = Depends(get_db), api_key: str = Depends(get_api_k
             .order_by(Appointment.start_time)
             .all()
         )
+        
+        # Convert timestamps to Mountain Time
+        local_tz = ZoneInfo('America/Denver')
+        for appt in appointments:
+            # Add UTC timezone info to the naive datetime
+            utc_start = appt.start_time.replace(tzinfo=ZoneInfo('UTC'))
+            utc_created = appt.acuity_created_at.replace(tzinfo=ZoneInfo('UTC'))
+            
+            # Convert to local time
+            appt.start_time = utc_start.astimezone(local_tz)
+            appt.acuity_created_at = utc_created.astimezone(local_tz)
+            
+            if appt.acuity_deleted_at:
+                utc_deleted = appt.acuity_deleted_at.replace(tzinfo=ZoneInfo('UTC'))
+                appt.acuity_deleted_at = utc_deleted.astimezone(local_tz)
+        
+        return appointments
 
     except Exception as e:
+        logger.error(f"Error in get_schedule: {str(e)}", exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -145,6 +165,7 @@ def _process_event(
 @router.get("/schedule/diff", response_model=List[HourlyDiff])
 def get_schedule_diff(db: Session = Depends(get_db), api_key: str = Depends(get_api_key)) -> List[HourlyDiff]:
     try:
+        # NOTE: the Events are in Local (Denver) time, but appointments are in utc (wtf)
         center_open, center_close = get_center_opening_hours()
         today_start, today_end, today_day_of_week = get_today_boundaries()
         
