@@ -1,27 +1,27 @@
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
-import { HourlyDiff, Appointment } from "@/lib/types"
-import { PlusCircle, MinusCircle } from "lucide-react"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+  HourlyDiff,
+  HourAppointments,
+  HourCount,
+  Appointment,
+} from "@/lib/types"
 import { Button } from "@/components/ui/button"
+import DiffTable from "./DiffTable"
+import AppointmentsTable from "./AppointmentsTable"
 import { getScheduleDiff, getSchedule, takeSnapshot } from "@/lib/api-actions"
+import { wasSnapshotTaken } from "@/lib/snaphotTimingUtils"
 
 export default function Home() {
+  const dayOfWeek = new Date().getDay()
   const [scheduleDiff, setScheduleDiff] = useState<Array<HourlyDiff> | null>(
     null
   )
   const [schedule, setSchedule] = useState<Appointment[] | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
-  const appointmentsByHour = useMemo(() => {
+  const appointmentsByHour: Array<HourAppointments> | null = useMemo(() => {
     if (!schedule) return null
 
     // Create a map where keys are hours and values are arrays of appointments
@@ -43,7 +43,7 @@ export default function Home() {
     )
   }, [schedule])
 
-  const nonDummyByHour = useMemo(() => {
+  const nonDummyByHour: Array<HourCount> | null = useMemo(() => {
     if (!schedule) return null
 
     const hourCounts = new Map<string, number>()
@@ -60,18 +60,6 @@ export default function Home() {
       count,
     }))
   }, [schedule])
-
-  const handleTakeSnapshot = async () => {
-    try {
-      setIsLoading(true)
-      const message = await takeSnapshot()
-      console.log(message)
-    } catch (error) {
-      console.error("Error taking snapshot", error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const fetchScheduleData = async () => {
     try {
@@ -91,6 +79,18 @@ export default function Home() {
       setSchedule(parsedSchedule)
     } catch (error) {
       console.error("Error fetching schedule:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleTakeSnapshot = async () => {
+    try {
+      setIsLoading(true)
+      const message = await takeSnapshot()
+      console.log(message)
+    } catch (error) {
+      console.error("Error taking snapshot", error)
     } finally {
       setIsLoading(false)
     }
@@ -120,7 +120,9 @@ export default function Home() {
     <div className="min-h-screen p-8 font-[family-name:var(--font-geist-sans)]">
       <main className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Today's Schedule Changes</h1>
+          <h1 className="text-2xl font-bold">Acuity Augmented</h1>
+          <p>Aurora Mathnasium</p>
+
           <div className="flex gap-2">
             <Button
               onClick={handleTakeSnapshot}
@@ -138,101 +140,21 @@ export default function Home() {
             </Button>
           </div>
         </div>
-        <div className="space-y-8">
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Schedule Changes</h2>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[100px]">Hour</TableHead>
-                  <TableHead>
-                    <div className="flex items-center gap-2">
-                      <PlusCircle className="w-5 h-5" />
-                      <span>Additions</span>
-                    </div>
-                  </TableHead>
-                  <TableHead>
-                    <div className="flex items-center gap-2">
-                      <MinusCircle className="w-5 h-5" />
-                      <span>Cancellations</span>
-                    </div>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {scheduleDiff &&
-                  scheduleDiff.length > 0 &&
-                  scheduleDiff.map((diff) => (
-                    <TableRow key={diff.hour}>
-                      <TableCell className="font-medium">{diff.hour}</TableCell>
-                      <TableCell>
-                        {diff.added.length > 0 && (
-                          <div>
-                            {diff.added.map((appointment) => (
-                              <div key={appointment.id}>
-                                {appointment.first_name} {appointment.last_name}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {diff.deleted.length > 0 && (
-                          <div>
-                            {diff.deleted.map((appointment) => (
-                              <div key={appointment.id}>
-                                {appointment.first_name} {appointment.last_name}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          <div>
-            <h2 className="text-xl font-semibold mb-4">
-              Appointments per Hour
-            </h2>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Hour</TableHead>
-                  <TableHead>Names</TableHead>
-                  <TableHead>Count</TableHead>
-                  <TableHead>Non-Dummy Count</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {appointmentsByHour?.map((hourData, idx) => (
-                  <TableRow key={hourData.hour}>
-                    <TableCell className="font-medium">
-                      {hourData.hour}
-                    </TableCell>
-                    <TableCell>
-                      {hourData.appointments.map((appt) => (
-                        <p key={appt.id}>
-                          {appt.first_name} {appt.last_name}
-                        </p>
-                      ))}
-                    </TableCell>
-                    <TableCell>{hourData.appointments.length}</TableCell>
-                    <TableCell>
-                      {(nonDummyByHour &&
-                        nonDummyByHour.find(
-                          (item) => item.hour === hourData.hour
-                        )?.count) ||
-                        0}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
+        {dayOfWeek === 6 && (
+          <p className="my-8">
+            The center is closed today, so these are blank.
+          </p>
+        )}
+        {!wasSnapshotTaken() && (
+          <p className="my-8">
+            It's not 30 minutes before open yet, so these are blank.{" "}
+          </p>
+        )}
+        <DiffTable scheduleDiff={scheduleDiff} />
+        <AppointmentsTable
+          appointmentsByHour={appointmentsByHour}
+          nonDummyByHour={nonDummyByHour}
+        />
       </main>
     </div>
   )
