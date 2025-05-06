@@ -5,7 +5,7 @@ import { HourlyDiff, HourCount, Appointment } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import DiffTable from "./DiffTable"
 import AppointmentsTable from "./AppointmentsTable"
-import { getScheduleDiff, getSchedule, takeSnapshot } from "@/lib/api-actions"
+import { getScheduleDiff, getSchedule } from "@/lib/api-actions"
 import { wasSnapshotTaken } from "@/lib/snaphotTimingUtils"
 import { logout } from "./login/actions"
 
@@ -15,6 +15,7 @@ export default function Home() {
     null
   )
   const [schedule, setSchedule] = useState<Appointment[] | null>(null)
+  // eslint-disable-next-line
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
   const appointmentsByHour = useMemo(() => {
@@ -80,17 +81,17 @@ export default function Home() {
     }
   }
 
-  const handleTakeSnapshot = async () => {
-    try {
-      setIsLoading(true)
-      const message = await takeSnapshot()
-      console.log(message)
-    } catch (error) {
-      console.error("Error taking snapshot", error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  // const handleTakeSnapshot = async () => {
+  //   try {
+  //     setIsLoading(true)
+  //     const message = await takeSnapshot()
+  //     console.log(message)
+  //   } catch (error) {
+  //     console.error("Error taking snapshot", error)
+  //   } finally {
+  //     setIsLoading(false)
+  //   }
+  // }
 
   useEffect(() => {
     const fetchDiff = async () => {
@@ -116,11 +117,6 @@ export default function Home() {
     fetchScheduleData()
   }, [])
 
-  useEffect(() => {
-    console.log(schedule)
-    console.log(appointmentsByHour)
-  }, [appointmentsByHour, schedule])
-
   return (
     <div className="min-h-screen p-8 font-[family-name:var(--font-geist-sans)]">
       <main className="max-w-4xl mx-auto">
@@ -129,7 +125,7 @@ export default function Home() {
           <p>Aurora Mathnasium</p>
 
           <div className="flex gap-2">
-            <Button
+            {/* <Button
               onClick={handleTakeSnapshot}
               variant="outline"
               disabled={isLoading}
@@ -142,7 +138,7 @@ export default function Home() {
               disabled={isLoading}
             >
               {isLoading ? "Loading..." : "Fetch Schedule"}
-            </Button>
+            </Button> */}
             <Button
               onClick={() => logout()}
               variant="outline"
