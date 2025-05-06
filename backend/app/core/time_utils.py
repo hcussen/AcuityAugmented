@@ -30,11 +30,9 @@ def get_center_opening_hours(day_of_week = None, in_utc = True) -> Tuple[datetim
     center_open, center_close = settings.hours_open[day_of_week]
     center_open = datetime.strptime(f'{date} {center_open}', "%d/%m/%y %H:%M").replace(tzinfo=local_tz)
     center_close = datetime.strptime(f'{date} {center_close}', "%d/%m/%y %H:%M").replace(tzinfo=local_tz)
-    print(center_open, center_close)
     if in_utc:
         center_open = center_open.astimezone(ZoneInfo('UTC'))
         center_close = center_close.astimezone(ZoneInfo('UTC'))
-    print(center_open, center_close)
     return (center_open, center_close)
 
 def isToday(timestamp_string: str) -> bool:
