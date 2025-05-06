@@ -80,7 +80,8 @@ def create_appointment(appt: AppointmentCreate, db: Session = Depends(get_db), a
 def get_schedule(db: Session = Depends(get_db), api_key: str = Depends(get_api_key)):
     try:
         today_start, today_end, _ = get_today_boundaries()
-        
+        print(today_start)
+        print(today_end)
         # Get appointments from database (they're in UTC)
         appointments = (
             db.query(Appointment)
@@ -93,7 +94,7 @@ def get_schedule(db: Session = Depends(get_db), api_key: str = Depends(get_api_k
             .order_by(Appointment.start_time)
             .all()
         )
-        
+        print(f'found {len(appointments)} appointments')
         # Convert timestamps to Mountain Time
         local_tz = ZoneInfo('America/Denver')
         for appt in appointments:
@@ -109,6 +110,7 @@ def get_schedule(db: Session = Depends(get_db), api_key: str = Depends(get_api_k
                 utc_deleted = appt.acuity_deleted_at.replace(tzinfo=ZoneInfo('UTC'))
                 appt.acuity_deleted_at = utc_deleted.astimezone(local_tz)
         
+        print(f'converted {len(appointments)} appointments')
         return appointments
 
     except Exception as e:

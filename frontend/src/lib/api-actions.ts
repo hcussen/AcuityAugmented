@@ -16,7 +16,10 @@ type Method = "GET" | "POST" | "PUT" | "PATCH"
  *   environment variable, or an empty string if not set.
  */
 async function apiWrapper(endpoint: string, verb: Method): Promise<any> {
-  const baseUrl = process.env.API_BASE_URL || "http://localhost:8000"
+  const baseUrl =
+    process.env.NODE_ENV === "production"
+      ? process.env.API_BASE_URL
+      : "http://localhost:8000"
   const response = await fetch(`${baseUrl}/${endpoint}`, {
     method: verb,
     headers: {

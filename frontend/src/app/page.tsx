@@ -76,6 +76,7 @@ export default function Home() {
         created_at_here: new Date(appointment.created_at_here),
         last_modified_here: new Date(appointment.last_modified_here),
       }))
+      console.log(`found ${parsedSchedule.length} appts`)
       setSchedule(parsedSchedule)
     } catch (error) {
       console.error("Error fetching schedule:", error)
@@ -121,8 +122,9 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
+    console.log(schedule)
     console.log(appointmentsByHour)
-  }, [appointmentsByHour])
+  }, [appointmentsByHour, schedule])
 
   return (
     <div className="min-h-screen p-8 font-[family-name:var(--font-geist-sans)]">
