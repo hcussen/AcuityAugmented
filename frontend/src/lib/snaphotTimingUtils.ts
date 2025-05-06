@@ -56,10 +56,16 @@ export function wasSnapshotTaken(): boolean {
  */
 export function todaySnapshotTime(): string {
   const now = new Date()
+  if (now.getDay() === 6) {
+    return "Closed"
+  }
   return snapshotTimes[now.getDay()]
 }
 
 export function militaryToStandard(time: string): string {
+  if (time === "Closed") {
+    return "Closed"
+  }
   const [hours, minutes] = time.split(":").map(Number)
   if (hours < 12) {
     return `${hours}:${minutes} AM`

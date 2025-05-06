@@ -14,6 +14,7 @@ import { getScheduleDiff, getSchedule, takeSnapshot } from "@/lib/api-actions"
 import { wasSnapshotTaken } from "@/lib/snaphotTimingUtils"
 
 export default function Home() {
+  const dayOfWeek = new Date().getDay()
   const [scheduleDiff, setScheduleDiff] = useState<Array<HourlyDiff> | null>(
     null
   )
@@ -139,6 +140,11 @@ export default function Home() {
             </Button>
           </div>
         </div>
+        {dayOfWeek === 6 && (
+          <p className="my-8">
+            The center is closed today, so these are blank.
+          </p>
+        )}
         {!wasSnapshotTaken() && (
           <p className="my-8">
             It's not 30 minutes before open yet, so these are blank.{" "}
