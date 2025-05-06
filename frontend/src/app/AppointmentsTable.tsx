@@ -7,7 +7,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { getScheduleDiff, getSchedule, takeSnapshot } from "@/lib/api-actions"
 
 export default function AppointmentsTable({
   appointmentsByHour,
