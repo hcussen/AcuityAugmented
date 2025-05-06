@@ -26,7 +26,7 @@ export default function Home() {
     if (!schedule) return null
 
     // Create a map where keys are hours and values are arrays of appointments
-    const hourAppointments = new Map<string, Array<any>>()
+    const hourAppointments = new Map<string, Array<Appointment>>()
 
     schedule.forEach((appointment) => {
       const hour = appointment.start_time.getHours().toString()
@@ -159,7 +159,7 @@ export default function Home() {
         )}
         {!wasSnapshotTaken() && (
           <p className="my-8">
-            It's not 30 minutes before open yet, so these are blank.{" "}
+            It&apos;s not 30 minutes before open yet, so these are blank.{" "}
           </p>
         )}
         <DiffTable scheduleDiff={scheduleDiff} />
