@@ -7,6 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { militaryToStandard, todaySnapshotTime } from "@/lib/snaphotTimingUtils"
 
 export default function AppointmentsTable({
   appointmentsByHour,
@@ -17,7 +18,9 @@ export default function AppointmentsTable({
 }) {
   return (
     <div className="my-8">
-      <h2 className="text-xl font-semibold mb-4">Appointments at 3:30pm</h2>
+      <h2 className="text-xl font-semibold mb-4">
+        Appointments as of {militaryToStandard(todaySnapshotTime())}
+      </h2>
       <Table>
         <TableHeader>
           <TableRow>

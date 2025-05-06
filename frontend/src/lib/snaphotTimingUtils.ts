@@ -58,3 +58,12 @@ export function todaySnapshotTime(): string {
   const now = new Date()
   return snapshotTimes[now.getDay()]
 }
+
+export function militaryToStandard(time: string): string {
+  const [hours, minutes] = time.split(":").map(Number)
+  if (hours < 12) {
+    return `${hours}:${minutes} AM`
+  } else {
+    return `${hours % 12}:${minutes} PM`
+  }
+}

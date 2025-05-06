@@ -8,6 +8,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { HourlyDiff } from "@/lib/types"
+import { todaySnapshotTime, militaryToStandard } from "@/lib/snaphotTimingUtils"
 
 export default function DiffTable({
   scheduleDiff,
@@ -18,7 +19,7 @@ export default function DiffTable({
     <div className="space-y-8">
       <div>
         <h2 className="text-xl font-semibold mb-4">
-          Schedule Changes since 3:30pm
+          Schedule Changes since {militaryToStandard(todaySnapshotTime())}
         </h2>
         <Table>
           <TableHeader>

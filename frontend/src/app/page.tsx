@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import DiffTable from "./DiffTable"
 import AppointmentsTable from "./AppointmentsTable"
 import { getScheduleDiff, getSchedule, takeSnapshot } from "@/lib/api-actions"
-import { wasSnapshotTaken } from "@/lib/isOpenHook"
+import { wasSnapshotTaken } from "@/lib/snaphotTimingUtils"
 
 export default function Home() {
   const [scheduleDiff, setScheduleDiff] = useState<Array<HourlyDiff> | null>(
