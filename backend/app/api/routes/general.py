@@ -10,7 +10,7 @@ from app.config import settings
 from app.core.auth import get_api_key
 from app.database import get_db
 from app.models import Appointment, Event, EventAction
-from app.core.time_utils import get_today_boundaries
+from app.core.time_utils import get_today_boundaries, get_center_opening_hours
 
 from logging import getLogger
 logger = getLogger(__name__)
@@ -98,9 +98,7 @@ def get_schedule(db: Session = Depends(get_db), api_key: str = Depends(get_api_k
 
 def _initialize_hourly_diffs(day_of_week: int) -> Dict[str, HourlyDiff]:
     hourly_diffs: Dict[str, HourlyDiff] = {}
-    center_open, center_close = settings.hours_open[day_of_week]
-    center_open = datetime.strptime(center_open, "%H:%M")
-    center_close = datetime.strptime(center_close, "%H:%M")
+    center_open, center_close = get_center_opening_hours(day_of_week)
     hours_open = int((center_close - center_open).total_seconds() // 3600)
     
     for i in range(hours_open):
@@ -147,6 +145,7 @@ def _process_event(
 @router.get("/schedule/diff", response_model=List[HourlyDiff])
 def get_schedule_diff(db: Session = Depends(get_db), api_key: str = Depends(get_api_key)) -> List[HourlyDiff]:
     try:
+        center_open, center_close = get_center_opening_hours()
         today_start, today_end, today_day_of_week = get_today_boundaries()
         
         today_events = (
@@ -159,8 +158,10 @@ def get_schedule_diff(db: Session = Depends(get_db), api_key: str = Depends(get_
             .join(Event.appointment)
             .filter(
                 and_(
-                    Event.created_at >= today_start, 
-                    Event.created_at < today_end, 
+                    # the event was created during center open hours
+                    Event.created_at >= center_open, 
+                    Event.created_at < center_close, 
+                    # and the event applies to today 
                     or_(Event.old_time <= today_end, Event.new_time <= today_end)
                 ))
             .order_by(Event.created_at)
