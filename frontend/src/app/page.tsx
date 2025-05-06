@@ -164,7 +164,7 @@ export default function Home() {
         )}
         {!wasSnapshotTaken() && (
           <p className="my-8">
-            It's not 30 minutes before open yet, so these are blank.{" "}
+            It&apos;s not 30 minutes before open yet, so these are blank.{" "}
           </p>
         )}
         <DiffTable scheduleDiff={scheduleDiff} />
