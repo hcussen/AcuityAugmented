@@ -165,7 +165,6 @@ def get_schedule_diff(db: Session = Depends(get_db), api_key: str = Depends(get_
     try:
         # NOTE: the Events are in Local (Denver) time, but appointments are in utc (wtf)
         center_open, center_close = get_center_opening_hours()
-        print("from get_scheudle_diff", center_open, center_close)
         today_start, today_end, today_day_of_week = get_today_boundaries()
         
         today_events = (
