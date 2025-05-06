@@ -8,6 +8,8 @@ from sqlalchemy import URL
 class Settings(BaseSettings):
     # Add database URL for SQLAlchemy
     database_url: str
+    # API key 
+    api_key: str
 
     # You can add other settings as needed
     env_name: str = "dev"
