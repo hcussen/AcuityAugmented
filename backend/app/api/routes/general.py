@@ -158,8 +158,8 @@ def get_schedule_diff(db: Session = Depends(get_db), api_key: str = Depends(get_
             .join(Event.appointment)
             .filter(
                 and_(
-                    # the event was created during center open hours
-                    Event.created_at >= center_open, 
+                    # the event was created during center open hours, after the snapshot
+                    Event.created_at >= center_open - timedelta(minutes=30), 
                     Event.created_at < center_close, 
                     # and the event applies to today 
                     or_(Event.old_time <= today_end, Event.new_time <= today_end)
