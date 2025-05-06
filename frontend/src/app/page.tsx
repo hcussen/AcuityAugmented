@@ -1,7 +1,12 @@
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
-import { HourlyDiff, Appointment, SimpleAppointment } from "@/lib/types"
+import {
+  HourlyDiff,
+  HourAppointments,
+  HourCount,
+  Appointment,
+} from "@/lib/types"
 import { PlusCircle, MinusCircle } from "lucide-react"
 import {
   Table,
@@ -15,16 +20,6 @@ import { Button } from "@/components/ui/button"
 import AppointmentsTable from "./AppointmentsTable"
 import { getScheduleDiff, getSchedule, takeSnapshot } from "@/lib/api-actions"
 
-type Temp = {
-  hour: string
-  appointments: SimpleAppointment[]
-}
-
-type HourCount = {
-  hour: string
-  count: number
-}
-
 export default function Home() {
   const [scheduleDiff, setScheduleDiff] = useState<Array<HourlyDiff> | null>(
     null
@@ -32,7 +27,7 @@ export default function Home() {
   const [schedule, setSchedule] = useState<Appointment[] | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
-  const appointmentsByHour: Array<Temp> | null = useMemo(() => {
+  const appointmentsByHour: Array<HourAppointments> | null = useMemo(() => {
     if (!schedule) return null
 
     // Create a map where keys are hours and values are arrays of appointments

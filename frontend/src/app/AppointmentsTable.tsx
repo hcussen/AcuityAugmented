@@ -1,5 +1,4 @@
-import { useEffect, useState, useMemo } from "react"
-import { HourlyDiff, Appointment } from "@/lib/types"
+import { HourAppointments, HourCount } from "@/lib/types"
 import {
   Table,
   TableBody,
@@ -13,6 +12,9 @@ import { getScheduleDiff, getSchedule, takeSnapshot } from "@/lib/api-actions"
 export default function AppointmentsTable({
   appointmentsByHour,
   nonDummyByHour,
+}: {
+  appointmentsByHour: HourAppointments[] | null
+  nonDummyByHour: HourCount[] | null
 }) {
   return (
     <div>
@@ -27,7 +29,7 @@ export default function AppointmentsTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {appointmentsByHour?.map((hourData, idx) => (
+          {appointmentsByHour?.map((hourData) => (
             <TableRow key={hourData.hour}>
               <TableCell className="font-medium">{hourData.hour}</TableCell>
               <TableCell>

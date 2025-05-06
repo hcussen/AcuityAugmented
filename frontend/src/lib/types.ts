@@ -10,6 +10,16 @@ export interface HourlyDiff {
   deleted: SimpleAppointment[]
 }
 
+export type HourAppointments = {
+  hour: string
+  appointments: SimpleAppointment[]
+}
+
+export type HourCount = {
+  hour: string
+  count: number
+}
+
 export enum EventAction {
   Schedule = "schedule",
   RescheduleIncoming = "reschedule_incoming",
