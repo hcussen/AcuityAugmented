@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
-import { HourlyDiff, Appointment } from "@/lib/types"
+import { HourlyDiff, Appointment, SimpleAppointment } from "@/lib/types"
 import { PlusCircle, MinusCircle } from "lucide-react"
 import {
   Table,
@@ -12,7 +12,18 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
+import AppointmentsTable from "./AppointmentsTable"
 import { getScheduleDiff, getSchedule, takeSnapshot } from "@/lib/api-actions"
+
+type Temp = {
+  hour: string
+  appointments: SimpleAppointment[]
+}
+
+type HourCount = {
+  hour: string
+  count: number
+}
 
 export default function Home() {
   const [scheduleDiff, setScheduleDiff] = useState<Array<HourlyDiff> | null>(
@@ -21,7 +32,7 @@ export default function Home() {
   const [schedule, setSchedule] = useState<Appointment[] | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
-  const appointmentsByHour = useMemo(() => {
+  const appointmentsByHour: Array<Temp> | null = useMemo(() => {
     if (!schedule) return null
 
     // Create a map where keys are hours and values are arrays of appointments
@@ -43,7 +54,7 @@ export default function Home() {
     )
   }, [schedule])
 
-  const nonDummyByHour = useMemo(() => {
+  const nonDummyByHour: Array<HourCount> | null = useMemo(() => {
     if (!schedule) return null
 
     const hourCounts = new Map<string, number>()
@@ -60,18 +71,6 @@ export default function Home() {
       count,
     }))
   }, [schedule])
-
-  const handleTakeSnapshot = async () => {
-    try {
-      setIsLoading(true)
-      const message = await takeSnapshot()
-      console.log(message)
-    } catch (error) {
-      console.error("Error taking snapshot", error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const fetchScheduleData = async () => {
     try {
@@ -91,6 +90,18 @@ export default function Home() {
       setSchedule(parsedSchedule)
     } catch (error) {
       console.error("Error fetching schedule:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleTakeSnapshot = async () => {
+    try {
+      setIsLoading(true)
+      const message = await takeSnapshot()
+      console.log(message)
+    } catch (error) {
+      console.error("Error taking snapshot", error)
     } finally {
       setIsLoading(false)
     }
@@ -192,47 +203,11 @@ export default function Home() {
               </TableBody>
             </Table>
           </div>
-
-          <div>
-            <h2 className="text-xl font-semibold mb-4">
-              Appointments per Hour
-            </h2>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Hour</TableHead>
-                  <TableHead>Names</TableHead>
-                  <TableHead>Count</TableHead>
-                  <TableHead>Non-Dummy Count</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {appointmentsByHour?.map((hourData, idx) => (
-                  <TableRow key={hourData.hour}>
-                    <TableCell className="font-medium">
-                      {hourData.hour}
-                    </TableCell>
-                    <TableCell>
-                      {hourData.appointments.map((appt) => (
-                        <p key={appt.id}>
-                          {appt.first_name} {appt.last_name}
-                        </p>
-                      ))}
-                    </TableCell>
-                    <TableCell>{hourData.appointments.length}</TableCell>
-                    <TableCell>
-                      {(nonDummyByHour &&
-                        nonDummyByHour.find(
-                          (item) => item.hour === hourData.hour
-                        )?.count) ||
-                        0}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
         </div>
+        <AppointmentsTable
+          appointmentsByHour={appointmentsByHour}
+          nonDummyByHour={nonDummyByHour}
+        />
       </main>
     </div>
   )
