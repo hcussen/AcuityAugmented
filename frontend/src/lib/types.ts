@@ -12,7 +12,7 @@ export interface HourlyDiff {
 
 export type HourAppointments = {
   hour: string
-  appointments: SimpleAppointment[]
+  appointments: Appointment[]
 }
 
 export type HourCount = {

@@ -15,7 +15,7 @@ type Method = "GET" | "POST" | "PUT" | "PATCH"
  * - The `X-API-Key` header is included in the request, using the value of the `API_KEY`
  *   environment variable, or an empty string if not set.
  */
-async function apiWrapper(endpoint: string, verb: Method): Promise<any> {
+async function apiWrapper(endpoint: string, verb: Method): Promise<Response> {
   const baseUrl = process.env.API_BASE_URL || "http://localhost:8000"
   const response = await fetch(`${baseUrl}/${endpoint}`, {
     method: verb,
