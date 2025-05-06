@@ -22,20 +22,19 @@ export default function Home() {
   const [schedule, setSchedule] = useState<Appointment[] | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
-  const appointmentsByHour: Array<HourAppointments> | null = useMemo(() => {
+  const appointmentsByHour = useMemo(() => {
     if (!schedule) return null
 
     // Create a map where keys are hours and values are arrays of appointments
-    const hourAppointments = new Map<string, Array<any>>()
+    const hourAppointments = new Map<string, Array<Appointment>>()
 
-    schedule.forEach((appointment) => {
-      const hour = appointment.start_time.getHours().toString()
-      const existingAppointments = hourAppointments.get(hour) || []
-      existingAppointments.push(appointment)
-      hourAppointments.set(hour, existingAppointments)
+    schedule.forEach((appt: Appointment) => {
+      const hour = appt.start_time.getHours().toString()
+      const existingAppts = hourAppointments.get(hour) || []
+      hourAppointments.set(hour, [...existingAppts, appt])
     })
 
-    // Convert the map to the desired format
+    // Convert the map to array of objects with hour and appointments
     return Array.from(hourAppointments.entries()).map(
       ([hour, appointments]) => ({
         hour,
@@ -120,6 +119,10 @@ export default function Home() {
   useEffect(() => {
     fetchScheduleData()
   }, [])
+
+  useEffect(() => {
+    console.log(appointmentsByHour)
+  }, [appointmentsByHour])
 
   return (
     <div className="min-h-screen p-8 font-[family-name:var(--font-geist-sans)]">

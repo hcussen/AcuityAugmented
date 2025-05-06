@@ -84,8 +84,8 @@ def get_schedule(db: Session = Depends(get_db), api_key: str = Depends(get_api_k
             db.query(Appointment)
             .filter(
                 and_(
-                    Appointment.start_time >= today_start,
-                    Appointment.start_time < today_end,
+                    Appointment.start_time >= today_start + timedelta(hours=6),
+                    Appointment.start_time < today_end + timedelta(hours=6),
                 )
             )
             .order_by(Appointment.start_time)
