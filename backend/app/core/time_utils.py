@@ -1,13 +1,23 @@
 from datetime import datetime, timedelta
 from typing import Tuple
+from zoneinfo import ZoneInfo
 from app.config import settings
 
 def get_today_boundaries() -> Tuple[datetime, datetime, int]:
-    now = datetime.now()
-    today_start = datetime(now.year, now.month, now.day)
+    # Get current time in local timezone (Mountain Time)
+    local_tz = ZoneInfo('America/Denver')
+    now = datetime.now(local_tz)
+    
+    # Create local midnight timestamps
+    today_start = datetime(now.year, now.month, now.day, tzinfo=local_tz)
     today_end = today_start + timedelta(days=1)
+    
+    # Convert to UTC for database query
+    today_start_utc = today_start.astimezone(ZoneInfo('UTC'))
+    today_end_utc = today_end.astimezone(ZoneInfo('UTC'))
+    
     today_day_of_week = now.weekday()
-    return today_start, today_end, today_day_of_week
+    return today_start_utc, today_end_utc, today_day_of_week
 
 def get_center_opening_hours(day_of_week = None) -> Tuple[datetime, datetime]:
     now = datetime.now()
