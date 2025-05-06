@@ -116,7 +116,7 @@ def get_schedule(db: Session = Depends(get_db), api_key: str = Depends(get_api_k
 
 def _initialize_hourly_diffs(day_of_week: int) -> Dict[str, HourlyDiff]:
     hourly_diffs: Dict[str, HourlyDiff] = {}
-    center_open, center_close = get_center_opening_hours(day_of_week)
+    center_open, center_close = get_center_opening_hours(day_of_week, in_utc=False)
     hours_open = int((center_close - center_open).total_seconds() // 3600)
     
     for i in range(hours_open):
@@ -165,6 +165,7 @@ def get_schedule_diff(db: Session = Depends(get_db), api_key: str = Depends(get_
     try:
         # NOTE: the Events are in Local (Denver) time, but appointments are in utc (wtf)
         center_open, center_close = get_center_opening_hours()
+        print("from get_scheudle_diff", center_open, center_close)
         today_start, today_end, today_day_of_week = get_today_boundaries()
         
         today_events = (
