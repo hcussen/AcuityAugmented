@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import DiffTable from "./DiffTable"
 import AppointmentsTable from "./AppointmentsTable"
 import { getScheduleDiff, getSchedule, takeSnapshot } from "@/lib/api-actions"
+import { wasSnapshotTaken } from "@/lib/isOpenHook"
 
 export default function Home() {
   const [scheduleDiff, setScheduleDiff] = useState<Array<HourlyDiff> | null>(
@@ -120,6 +121,7 @@ export default function Home() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Acuity Augmented</h1>
           <p>Aurora Mathnasium</p>
+
           <div className="flex gap-2">
             <Button
               onClick={handleTakeSnapshot}
@@ -137,6 +139,11 @@ export default function Home() {
             </Button>
           </div>
         </div>
+        {!wasSnapshotTaken() && (
+          <p className="my-8">
+            It's not 30 minutes before open yet, so these are blank.{" "}
+          </p>
+        )}
         <DiffTable scheduleDiff={scheduleDiff} />
         <AppointmentsTable
           appointmentsByHour={appointmentsByHour}
