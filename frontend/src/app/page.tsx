@@ -1,12 +1,7 @@
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
-import {
-  HourlyDiff,
-  HourAppointments,
-  HourCount,
-  Appointment,
-} from "@/lib/types"
+import { HourlyDiff, HourCount, Appointment } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import DiffTable from "./DiffTable"
 import AppointmentsTable from "./AppointmentsTable"
