@@ -3,7 +3,7 @@ from typing import Tuple
 from zoneinfo import ZoneInfo
 from app.config import settings
 
-def get_today_boundaries() -> Tuple[datetime, datetime, int]:
+def get_today_boundaries(in_utc = True) -> Tuple[datetime, datetime, int]:
     # Get current time in local timezone (Mountain Time)
     local_tz = ZoneInfo('America/Denver')
     now = datetime.now(local_tz)
@@ -19,16 +19,22 @@ def get_today_boundaries() -> Tuple[datetime, datetime, int]:
     today_day_of_week = now.weekday()
     return today_start_utc, today_end_utc, today_day_of_week
 
-def get_center_opening_hours(day_of_week = None) -> Tuple[datetime, datetime]:
-    now = datetime.now()
+def get_center_opening_hours(day_of_week = None, in_utc = True) -> Tuple[datetime, datetime]:
+    local_tz = ZoneInfo('America/Denver')
+    now = datetime.now(local_tz)
     date = datetime.strftime(now, '%d/%m/%y')
 
     if day_of_week is None:
         day_of_week = now.weekday()
 
     center_open, center_close = settings.hours_open[day_of_week]
-    center_open = datetime.strptime(f'{date} {center_open}', "%d/%m/%y %H:%M")
-    center_close = datetime.strptime(f'{date} {center_close}', "%d/%m/%y %H:%M")
+    center_open = datetime.strptime(f'{date} {center_open}', "%d/%m/%y %H:%M").replace(tzinfo=local_tz)
+    center_close = datetime.strptime(f'{date} {center_close}', "%d/%m/%y %H:%M").replace(tzinfo=local_tz)
+    print(center_open, center_close)
+    if in_utc:
+        center_open = center_open.astimezone(ZoneInfo('UTC'))
+        center_close = center_close.astimezone(ZoneInfo('UTC'))
+    print(center_open, center_close)
     return (center_open, center_close)
 
 def isToday(timestamp_string: str) -> bool:
