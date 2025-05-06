@@ -12,6 +12,7 @@ import DiffTable from "./DiffTable"
 import AppointmentsTable from "./AppointmentsTable"
 import { getScheduleDiff, getSchedule, takeSnapshot } from "@/lib/api-actions"
 import { wasSnapshotTaken } from "@/lib/snaphotTimingUtils"
+import { logout } from "./login/actions"
 
 export default function Home() {
   const dayOfWeek = new Date().getDay()
@@ -116,6 +117,10 @@ export default function Home() {
     return () => clearInterval(pollInterval)
   }, [])
 
+  useEffect(() => {
+    fetchScheduleData()
+  }, [])
+
   return (
     <div className="min-h-screen p-8 font-[family-name:var(--font-geist-sans)]">
       <main className="max-w-4xl mx-auto">
@@ -137,6 +142,13 @@ export default function Home() {
               disabled={isLoading}
             >
               {isLoading ? "Loading..." : "Fetch Schedule"}
+            </Button>
+            <Button
+              onClick={() => logout()}
+              variant="outline"
+              className="text-amber-500 hover:text-amber-600 transition-colors"
+            >
+              Logout
             </Button>
           </div>
         </div>
