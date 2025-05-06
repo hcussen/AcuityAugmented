@@ -50,8 +50,8 @@ async def root():
 def read_root():
      return {"status": "ok"}
 
-@router.get("/protected-endpoint", dependencies=[Depends(get_api_key)])
-async def protected_endpoint():
+@router.get("/protected-endpoint")
+async def protected_endpoint(api_key: str = Depends(get_api_key)):
     return {"message": "You have access to the protected endpoint"}
 
 
