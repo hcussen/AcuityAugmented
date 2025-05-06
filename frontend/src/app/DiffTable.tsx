@@ -17,7 +17,9 @@ export default function DiffTable({
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-xl font-semibold mb-4">Schedule Changes</h2>
+        <h2 className="text-xl font-semibold mb-4">
+          Schedule Changes since 3:30pm
+        </h2>
         <Table>
           <TableHeader>
             <TableRow>

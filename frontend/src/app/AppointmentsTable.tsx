@@ -16,8 +16,8 @@ export default function AppointmentsTable({
   nonDummyByHour: HourCount[] | null
 }) {
   return (
-    <div>
-      <h2 className="text-xl font-semibold mb-4">Appointments per Hour</h2>
+    <div className="my-8">
+      <h2 className="text-xl font-semibold mb-4">Appointments at 3:30pm</h2>
       <Table>
         <TableHeader>
           <TableRow>

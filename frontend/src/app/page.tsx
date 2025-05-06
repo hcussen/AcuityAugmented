@@ -118,7 +118,8 @@ export default function Home() {
     <div className="min-h-screen p-8 font-[family-name:var(--font-geist-sans)]">
       <main className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Today's Schedule Changes</h1>
+          <h1 className="text-2xl font-bold">Acuity Augmented</h1>
+          <p>Aurora Mathnasium</p>
           <div className="flex gap-2">
             <Button
               onClick={handleTakeSnapshot}
