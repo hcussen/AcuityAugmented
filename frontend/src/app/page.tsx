@@ -8,6 +8,8 @@ import AppointmentsTable from "./AppointmentsTable"
 import { getScheduleDiff, getSchedule } from "@/lib/api-actions"
 import { wasSnapshotTaken } from "@/lib/snaphotTimingUtils"
 import { logout } from "./login/actions"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Clock } from "lucide-react"
 
 export default function Home() {
   const dayOfWeek = new Date().getDay()
@@ -153,16 +155,30 @@ export default function Home() {
             The center is closed today, so these are blank.
           </p>
         )}
-        {!wasSnapshotTaken() && (
-          <p className="my-8">
-            It&apos;s not 30 minutes before open yet, so these are blank.{" "}
-          </p>
+        {wasSnapshotTaken() ? (
+          <>
+            <DiffTable scheduleDiff={scheduleDiff} />
+            <AppointmentsTable
+              appointmentsByHour={appointmentsByHour}
+              nonDummyByHour={nonDummyByHour}
+            />
+          </>
+        ) : (
+          <>
+            <Alert className="my-8">
+              <Clock className="mt-1 h-8 w-8" />
+              <AlertTitle>Center isn't open yet.</AlertTitle>
+              <AlertDescription>
+                Data will populate 30 minutes before the center opens.
+              </AlertDescription>
+            </Alert>
+            <DiffTable scheduleDiff={null} />
+            <AppointmentsTable
+              appointmentsByHour={null}
+              nonDummyByHour={null}
+            />
+          </>
         )}
-        <DiffTable scheduleDiff={scheduleDiff} />
-        <AppointmentsTable
-          appointmentsByHour={appointmentsByHour}
-          nonDummyByHour={nonDummyByHour}
-        />
       </main>
     </div>
   )
