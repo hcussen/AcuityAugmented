@@ -167,7 +167,7 @@ export default function Home() {
           <>
             <Alert className="my-8">
               <Clock className="mt-1 h-8 w-8" />
-              <AlertTitle>Center isn't open yet.</AlertTitle>
+              <AlertTitle>Center isn&apos;t open yet.</AlertTitle>
               <AlertDescription>
                 Data will populate 30 minutes before the center opens.
               </AlertDescription>
