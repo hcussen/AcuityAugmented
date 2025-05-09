@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from app.types import AcuityAppointment
 from app.models import Appointment
 
@@ -16,7 +16,7 @@ def acuity_to_appointment(acuity_appt: AcuityAppointment) -> Appointment:
         acuity_id=acuity_appt.id,
         first_name=acuity_appt.firstName,
         last_name=acuity_appt.lastName,
-        start_time=datetime.fromisoformat(acuity_appt.datetime),
+        start_time=datetime.fromisoformat(acuity_appt.datetime).astimezone(tz=timezone.utc),
         duration=int(acuity_appt.duration),
         acuity_created_at=datetime.fromisoformat(acuity_appt.datetimeCreated),
         is_canceled=acuity_appt.canceled

@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from freezegun import freeze_time
 from app.models import Appointment, Event, EventAction
 import uuid
@@ -22,7 +22,7 @@ class TestScheduleDiff:
             assert len(diff["added"]) == 0
             assert len(diff["deleted"]) == 0
 
-    @freeze_time("2025-04-24")
+    @freeze_time("2025-04-24T15:30:00-0600")
     def test_schedule_new_appointment(self, db_session, test_client):
         """Test that a newly scheduled appointment appears in the correct hour's added list"""
         # Create appointment and schedule event
@@ -32,7 +32,7 @@ class TestScheduleDiff:
             acuity_id=12345,
             first_name="John",
             last_name="Doe",
-            start_time=datetime.fromisoformat("2025-04-24T17:00:00-06:00"),
+            start_time=datetime.fromisoformat("2025-04-24T17:00:00-06:00").astimezone(timezone.utc),
             acuity_created_at=datetime.now(),
             duration=60
         )
@@ -43,7 +43,7 @@ class TestScheduleDiff:
             id=event_id,
             action=EventAction.schedule,
             appointment_id=appt_id,
-            new_time=datetime.fromisoformat("2025-04-24T17:00:00-06:00"),
+            new_time=datetime.fromisoformat("2025-04-24T17:00:00-06:00").astimezone(timezone.utc),
             created_at=datetime.now()  # Explicitly set created_at to the frozen time
         )
         db_session.add(event)
@@ -52,6 +52,7 @@ class TestScheduleDiff:
         response = test_client.get('/schedule/diff')
         assert response.status_code == 200
         diffs = response.json()
+        print(diffs)
         
         # Find the 10:00 slot
         five_pm_diff = next(diff for diff in diffs if diff["hour"] == "17:00")
@@ -62,7 +63,7 @@ class TestScheduleDiff:
         assert five_pm_diff["added"][0]["last_name"] == "Doe"
         assert len(five_pm_diff["deleted"]) == 0
 
-    @freeze_time("2025-04-24")
+    @freeze_time("2025-04-24T15:30:00-0600")
     def test_schedule_cancel_appointment(self, db_session, test_client):
         """Test that a cancelled appointment appears in the correct hour's deleted list"""
         # Create appointment and cancel event
@@ -72,8 +73,8 @@ class TestScheduleDiff:
             acuity_id=12345,
             first_name="Jane",
             last_name="Smith",
-            start_time=datetime.fromisoformat("2025-04-24T16:00:00-06:00"),
-            acuity_created_at=datetime.fromisoformat("2025-04-23T16:00:00-06:00"),
+            start_time=datetime.fromisoformat("2025-04-24T16:00:00-06:00").astimezone(timezone.utc),
+            acuity_created_at=datetime.fromisoformat("2025-04-23T16:00:00-06:00").astimezone(timezone.utc),
             duration=60,
             is_canceled=True
         )
@@ -82,7 +83,7 @@ class TestScheduleDiff:
         event = Event(
             action=EventAction.cancel,
             appointment_id=appt_id,
-            old_time=datetime.fromisoformat("2025-04-24T16:00:00-06:00"),
+            old_time=datetime.fromisoformat("2025-04-24T16:00:00-06:00").astimezone(timezone.utc),
             created_at=datetime.now()
         )
         db_session.add(event)
@@ -111,8 +112,8 @@ class TestScheduleDiff:
             first_name="Bob",
             last_name="Wilson",
 
-            start_time=datetime.fromisoformat("2025-04-24T18:00:00-06:00"),
-            acuity_created_at=datetime.fromisoformat("2025-04-23T16:00:00-06:00"),
+            start_time=datetime.fromisoformat("2025-04-24T18:00:00-06:00").astimezone(timezone.utc),
+            acuity_created_at=datetime.fromisoformat("2025-04-23T16:00:00-06:00").astimezone(timezone.utc),
             duration=60
         )
         db_session.add(appointment)
@@ -120,8 +121,8 @@ class TestScheduleDiff:
         event = Event(
             action=EventAction.reschedule_same_day,
             appointment_id=appt_id,
-            old_time=datetime.fromisoformat("2025-04-24T16:00:00-06:00"),
-            new_time=datetime.fromisoformat("2025-04-24T18:00:00-06:00"),
+            old_time=datetime.fromisoformat("2025-04-24T16:00:00-06:00").astimezone(timezone.utc),
+            new_time=datetime.fromisoformat("2025-04-24T18:00:00-06:00").astimezone(timezone.utc),
             created_at=datetime.now()
         )
         db_session.add(event)
@@ -157,7 +158,7 @@ class TestScheduleDiff:
             acuity_id=12345,
             first_name="Alice",
             last_name="Brown",
-            start_time=datetime.fromisoformat("2025-04-24T19:00:00-06:00"),
+            start_time=datetime.fromisoformat("2025-04-24T19:00:00-06:00").astimezone(timezone.utc),
             acuity_created_at=datetime.now(),
             duration=60
         )
@@ -166,8 +167,8 @@ class TestScheduleDiff:
         event = Event(
             action=EventAction.reschedule_incoming,
             appointment_id=appt_id,
-            old_time=datetime.fromisoformat("2025-04-25T10:00:00-06:00"),  # tomorrow
-            new_time=datetime.fromisoformat("2025-04-24T19:00:00-06:00"),   # today
+            old_time=datetime.fromisoformat("2025-04-25T10:00:00-06:00").astimezone(timezone.utc),  # tomorrow
+            new_time=datetime.fromisoformat("2025-04-24T19:00:00-06:00").astimezone(timezone.utc),   # today
             created_at=datetime.now()
         )
         db_session.add(event)
@@ -195,7 +196,7 @@ class TestScheduleDiff:
             acuity_id=12345,
             first_name="Carol",
             last_name="Davis",
-            start_time=datetime.fromisoformat("2025-04-25T10:00:00-06:00"),  # moved to tomorrow
+            start_time=datetime.fromisoformat("2025-04-25T10:00:00-06:00").astimezone(timezone.utc),  # moved to tomorrow
             acuity_created_at=datetime.now(),
             duration=60
         )
@@ -204,8 +205,8 @@ class TestScheduleDiff:
         event = Event(
             action=EventAction.reschedule_outgoing,
             appointment_id=appt_id,
-            old_time=datetime.fromisoformat("2025-04-24T19:00:00-06:00"),  # today
-            new_time=datetime.fromisoformat("2025-04-25T10:00:00-06:00"),   # tomorrow
+            old_time=datetime.fromisoformat("2025-04-24T19:00:00-06:00").astimezone(timezone.utc),  # today
+            new_time=datetime.fromisoformat("2025-04-25T10:00:00-06:00").astimezone(timezone.utc),   # tomorrow
             created_at=datetime.now()
         )
         db_session.add(event)

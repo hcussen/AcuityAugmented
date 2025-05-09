@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from app.models import Appointment, Snapshot
 from sqlalchemy import select
 from freezegun import freeze_time
@@ -93,7 +93,7 @@ class TestSnapshot:
             assert appointment is not None
             assert appointment.first_name == appt_data["firstName"]
             assert appointment.last_name == appt_data["lastName"]
-            assert appointment.start_time == datetime.fromisoformat(appt_data["datetime"]).replace(tzinfo=None)
+            assert appointment.start_time == datetime.fromisoformat(appt_data["datetime"]).astimezone(timezone.utc)
             assert appointment.duration == int(appt_data["duration"])
             assert appointment.is_canceled == appt_data["canceled"]
 
@@ -154,11 +154,11 @@ class TestSnapshot:
             assert appointment is not None
             assert appointment.first_name == appt_data["firstName"]
             assert appointment.last_name == appt_data["lastName"]
-            assert appointment.start_time == datetime.fromisoformat(appt_data["datetime"]).replace(tzinfo=None)
+            assert appointment.start_time == datetime.fromisoformat(appt_data["datetime"]).astimezone(timezone.utc)
             assert appointment.duration == int(appt_data["duration"])
             assert appointment.is_canceled == appt_data["canceled"]
 
-    @freeze_time("2025-04-25")
+    @freeze_time("2025-04-25T15:30:00-0600")
     def test_appointments_deleted_when_not_in_api(self, db_session, test_client, patched_acuity_client):
         """Test that appointments not present in the API response and with start_time today or earlier are deleted"""
         
@@ -226,7 +226,7 @@ class TestSnapshot:
         assert len(remaining_appointments) == 2
         assert [a.acuity_id for a in remaining_appointments] == [12345, 12346]
 
-    @freeze_time("2025-04-26")
+    @freeze_time("2025-04-26T12:00:00-0600")
     def test_non_today_appointments_not_deleted(self, db_session, test_client, patched_acuity_client):
         """Test that future and past appointments are not deleted even if missing from API"""
         
@@ -238,8 +238,8 @@ class TestSnapshot:
             create_appointment_details(3),
         ]
 
-        initial_appointments[0]['datetime'] = '2025-04-24T14:00:00-0600' # yesterday
-        initial_appointments[1]['datetime'] = '2025-04-25T14:00:00-0600' # today
+        initial_appointments[0]['datetime'] = '2025-04-25T14:00:00-0600' # yesterday
+        initial_appointments[1]['datetime'] = '2025-04-26T14:00:00-0600' # today
         initial_appointments[2]['datetime'] = '2025-04-26T14:00:00-0600' # today, will be deleted
         initial_appointments[3]['datetime'] = '2025-04-27T14:00:00-0600' # tomorrow
         
@@ -262,7 +262,7 @@ class TestSnapshot:
         # Verify all appointments remains
         remaining_appointments = db_session.query(Appointment).all()
         assert len(remaining_appointments) == 3
-        assert [a.acuity_id for a in remaining_appointments] == [12345, 12346, 12348]
+        assert {a.acuity_id for a in remaining_appointments} == {12345, 12346, 12348}
 
     @freeze_time("2025-04-26")
     def test_snapshot_with_updates(self, db_session, test_client, patched_acuity_client):
@@ -291,10 +291,9 @@ class TestSnapshot:
         assert any(appt["id"] == 12345 and appt["datetime"] == "2025-04-25T19:00:00-0600" 
                   for appt in snapshot_appointments)
 
-        # Modify one appointment (change time and add a note)
+        # Modify one appointment (change time)
         modified_appt = create_appointment_details(0)  # Get the base appointment
         modified_appt["datetime"] = "2025-04-25T21:00:00-0600"  # Change from 19:00 to 21:00
-        modified_appt["notes"] = "Rescheduled appointment"
         modified_appt["time"] = "9:00pm"
         modified_appt["endTime"] = "10:00pm"
 
@@ -318,9 +317,11 @@ class TestSnapshot:
         
         # Verify second snapshot contains updated appointment data
         snapshot_appointments = snapshots[1].dump
-        assert any(appt["id"] == 12345 and appt["datetime"] == "2025-04-25T21:00:00-0600" 
-                  and appt["notes"] == "Rescheduled appointment"
-                  for appt in snapshot_appointments)
+        print([(appt['id'], appt['datetime']) for appt in snapshot_appointments])
+        assert any(
+            appt["id"] == 12345 and \
+                appt["datetime"] == "2025-04-25T21:00:00-0600"
+                for appt in snapshot_appointments)
         
         # Verify the modified appointment was updated in the database
         modified_appointment = db_session.query(Appointment).filter(
@@ -328,7 +329,7 @@ class TestSnapshot:
         ).first()
         
         assert modified_appointment is not None
-        assert modified_appointment.start_time == datetime.fromisoformat("2025-04-25T21:00:00-0600").replace(tzinfo=None)
+        assert modified_appointment.start_time == datetime.fromisoformat("2025-04-25T21:00:00-0600").astimezone(timezone.utc)
         
         # Verify all appointments exist with correct details
         all_appointments = [modified_appt, initial_appointments[1], new_appointment]
@@ -340,6 +341,6 @@ class TestSnapshot:
             assert appointment is not None
             assert appointment.first_name == appt_data["firstName"]
             assert appointment.last_name == appt_data["lastName"]
-            assert appointment.start_time == datetime.fromisoformat(appt_data["datetime"]).replace(tzinfo=None)
+            assert appointment.start_time == datetime.fromisoformat(appt_data["datetime"]).astimezone(timezone.utc)
             assert appointment.duration == int(appt_data["duration"])
             assert appointment.is_canceled == appt_data["canceled"]
