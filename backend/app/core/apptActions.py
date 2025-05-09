@@ -59,23 +59,19 @@ def handle_cancel(existing_appt: Appointment, db) -> Event:
 def handle_reschedule_same_day(existing_appt: Appointment, appt_details: AcuityAppointment, db) -> Event:
     logger.info('reschedule same day')
     old_time = existing_appt.start_time
-    new_time = datetime.fromisoformat(appt_details['datetime']).replace(
-        tzinfo=None
-    )
+    new_time = datetime.fromisoformat(appt_details['datetime'])
     res = updateStartTime(existing_appt, new_time, db)
     event = Event(
         action=EventAction.reschedule_same_day,
-        old_time=old_time,
-        new_time=new_time,
+        old_time=old_time.astimezone(timezone.utc),
+        new_time=new_time.astimezone(timezone.utc),
         appointment_id=existing_appt.id,
     )
     return event
 
 def handle_reschedule_incoming(existing_appt: Appointment, appt_details: AcuityAppointment, db) -> Event:
     old_time = existing_appt.start_time
-    new_time = datetime.fromisoformat(appt_details['datetime']).replace(
-        tzinfo=None
-    )
+    new_time = datetime.fromisoformat(appt_details['datetime'])
     res = markAsCanceled(existing_appt, db)
     event = Event(
         action=EventAction.reschedule_incoming,
@@ -87,14 +83,12 @@ def handle_reschedule_incoming(existing_appt: Appointment, appt_details: AcuityA
 
 def handle_reschedule_outgoing(existing_appt: Appointment, appt_details: AcuityAppointment, db) -> Event:
     old_time = existing_appt.start_time
-    new_time = datetime.fromisoformat(appt_details['datetime']).replace(
-        tzinfo=None
-    )
+    new_time = datetime.fromisoformat(appt_details['datetime'])
     res = updateStartTime(existing_appt, new_time, db)
     event = Event(
         action=EventAction.reschedule_outgoing,
-        old_time=old_time,
-        new_time=new_time,
+        old_time=old_time.astimezone(timezone.utc),
+        new_time=new_time.astimezone(timezone.utc),
         appointment_id=existing_appt.id,
     )
     return event

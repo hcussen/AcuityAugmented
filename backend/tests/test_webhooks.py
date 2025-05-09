@@ -151,8 +151,8 @@ class TestWebhooks:
         assert returnedEvent['old_time'] == event.old_time
 
         # Parse both strings to datetime objects
-        returned_dt = datetime.strptime(returnedEvent['new_time'], '%Y-%m-%d %H:%M:%S')
-        event_dt = datetime.fromisoformat(event.new_time.replace('Z', '+00:00')).replace(tzinfo=None)
+        returned_dt = datetime.strptime(returnedEvent['new_time'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        event_dt = datetime.fromisoformat(event.new_time)
 
         # Then compare the datetime objects
         assert returned_dt == event_dt
@@ -225,7 +225,7 @@ class TestWebhooks:
             acuity_id=acuity_id,
             first_name="John",
             last_name="Doe",
-            start_time=datetime.fromisoformat(old_start_time),
+            start_time=datetime.fromisoformat(old_start_time).astimezone(timezone.utc),
             acuity_created_at=datetime.now() - timedelta(days=1),
             duration=60,
             is_canceled=False
@@ -238,7 +238,7 @@ class TestWebhooks:
             "id": 12345,
             "firstName": "John",
             "lastName": "Doe",
-            "datetime": "2025-04-25T16:00:00-0600",
+            "datetime": "2025-04-25T17:00:00-0600",
             "duration": "60",
             "canceled": False
         }
@@ -262,14 +262,15 @@ class TestWebhooks:
 
         # Verify event creation
         event_data = json.loads(content['data'])
+        print(event_data)
         assert event_data['action'] == EventAction.reschedule_same_day.value
-        assert datetime.strptime(event_data['old_time'], '%Y-%m-%d %H:%M:%S') == datetime.fromisoformat(old_start_time).replace(tzinfo=None)
-        assert datetime.strptime(event_data['new_time'], '%Y-%m-%d %H:%M:%S') == datetime.fromisoformat("2025-04-25T16:00:00-0600").replace(tzinfo=None)
+        assert datetime.strptime(event_data['old_time'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc) == datetime.fromisoformat(old_start_time).astimezone(timezone.utc)
+        assert datetime.strptime(event_data['new_time'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc) == datetime.fromisoformat("2025-04-25T17:00:00-0600").astimezone(timezone.utc)
 
         # Verify appointment update in database
         q = select(Appointment).where(Appointment.id == id)
         updated_appt = db_session.scalars(q).first()
-        expected_time = datetime.fromisoformat("2025-04-25T16:00:00-0600").replace(tzinfo=None)
+        expected_time = datetime.fromisoformat("2025-04-25T17:00:00-0600").astimezone(timezone.utc)
         assert updated_appt.start_time == expected_time
 
     @freeze_time("2025-04-25T15:00:00-0600")
@@ -321,7 +322,7 @@ class TestWebhooks:
         event_data = json.loads(content['data'])
         assert event_data['action'] == EventAction.reschedule_incoming.value
         assert datetime.strptime(event_data['old_time'], '%Y-%m-%d %H:%M:%S') == updated_appt.start_time.replace(tzinfo=None)
-        assert datetime.strptime(event_data['new_time'], '%Y-%m-%d %H:%M:%S') == datetime.fromisoformat("2025-04-25T16:00:00-0600").replace(tzinfo=None)
+        assert datetime.strptime(event_data['new_time'], '%Y-%m-%d %H:%M:%S') == datetime.fromisoformat("2025-04-25T16:00:00-0600").astimezone(timezone.utc).replace(tzinfo=None)
 
         
 
@@ -335,7 +336,7 @@ class TestWebhooks:
             acuity_id=acuity_id,
             first_name="John",
             last_name="Doe",
-            start_time=datetime.fromisoformat("2025-04-25T14:00:00-0600"),
+            start_time=datetime.fromisoformat("2025-04-25T14:00:00-0600").astimezone(timezone.utc),
             acuity_created_at=datetime.now() - timedelta(days=1),
             duration=60,
             is_canceled=False
@@ -368,12 +369,12 @@ class TestWebhooks:
         # Verify appointment time update
         q = select(Appointment).where(Appointment.id == id)
         updated_appt = db_session.scalars(q).first()
-        assert updated_appt.start_time == datetime.fromisoformat("2025-04-26T16:00:00-0600").replace(tzinfo=None)   
+        assert updated_appt.start_time.replace(tzinfo=timezone.utc) == datetime.fromisoformat("2025-04-26T16:00:00-0600").astimezone(timezone.utc)   
 
         # Verify event creation
         event_data = json.loads(content['data'])
         assert event_data['action'] == EventAction.reschedule_outgoing.value
-        assert datetime.strptime(event_data['old_time'], '%Y-%m-%d %H:%M:%S') == datetime.fromisoformat("2025-04-25T14:00:00-0600").replace(tzinfo=None)
-        assert datetime.strptime(event_data['new_time'], '%Y-%m-%d %H:%M:%S') == datetime.fromisoformat("2025-04-26T16:00:00-0600").replace(tzinfo=None)
+        assert datetime.strptime(event_data['old_time'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc) == datetime.fromisoformat("2025-04-25T14:00:00-0600").astimezone(timezone.utc)
+        assert datetime.strptime(event_data['new_time'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc) == datetime.fromisoformat("2025-04-26T16:00:00-0600").astimezone(timezone.utc)
 
        
