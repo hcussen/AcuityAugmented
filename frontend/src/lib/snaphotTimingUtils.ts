@@ -32,7 +32,7 @@ const snapshotTimes = Object.entries(openingHours).reduce(
  */
 export function wasSnapshotTaken(): boolean {
   const now = new Date()
-  const dayOfWeek = now.getDay() as DayOfWeek
+  const dayOfWeek = (now.getDay() - 1) as DayOfWeek
 
   // If center is closed (Sunday), no snapshot needed
   if (
@@ -59,7 +59,7 @@ export function todaySnapshotTime(): string {
   if (now.getDay() === 6) {
     return "Closed"
   }
-  return snapshotTimes[now.getDay()]
+  return snapshotTimes[now.getDay() - 1]
 }
 
 export function militaryToStandard(time: string): string {
