@@ -120,7 +120,7 @@ class TestWebhooks:
         assert content['status'] == 'passed'
         assert content['message'] == f"Appt 12345 doesn't deal with today"
 
-    @freeze_time("2025-04-25")
+    @freeze_time("2025-04-25T16:00:00-0600")
     def test_newly_scheduled_is_today(self, db_session, test_client, patched_acuity_client, appointment_details):
         # precondition: there is no existing appt in the db 
         
@@ -138,7 +138,7 @@ class TestWebhooks:
         event = Event(
                 action=EventAction.schedule,
                 old_time=None,
-                new_time="2025-04-25T19:00:00-0600",
+                new_time="2025-04-26T01:00:00-0000",
                 appointment_id=12345
             )
 
@@ -162,7 +162,7 @@ class TestWebhooks:
         existing_appt = db_session.scalars(q).all()[0]
         assert existing_appt
 
-    @freeze_time("2025-04-25")
+    @freeze_time("2025-04-25T16:00:00-0600")
     def test_cancel_appointment(self, db_session, test_client, patched_acuity_client, appointment_details):
         # Create an existing appointment in the database
         id = uuid.uuid4()
@@ -214,7 +214,7 @@ class TestWebhooks:
         # Verify appointment state in database
         assert fresh_appt.is_canceled == True
 
-    @freeze_time("2025-04-25")
+    @freeze_time("2025-04-25T16:00:00-0600")
     def test_reschedule_same_day(self, db_session, test_client, patched_acuity_client):
         # Create an existing appointment
         id = uuid.uuid4()
@@ -272,7 +272,7 @@ class TestWebhooks:
         expected_time = datetime.fromisoformat("2025-04-25T16:00:00-0600").replace(tzinfo=None)
         assert updated_appt.start_time == expected_time
 
-    @freeze_time("2025-04-25")
+    @freeze_time("2025-04-25T15:00:00-0600")
     def test_reschedule_incoming(self, db_session, test_client, patched_acuity_client):
         # Create an existing appointment for a different day
         id = uuid.uuid4()
@@ -325,7 +325,7 @@ class TestWebhooks:
 
         
 
-    @freeze_time("2025-04-25")
+    @freeze_time("2025-04-25T16:00:00-0600")
     def test_reschedule_outgoing(self, db_session, test_client, patched_acuity_client):
         # Create an existing appointment for today
         id = uuid.uuid4()
