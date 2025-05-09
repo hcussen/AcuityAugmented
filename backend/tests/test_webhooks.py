@@ -1,6 +1,6 @@
 import pytest
 from freezegun import freeze_time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.config import settings
 from app.models import Event, EventAction, Appointment
 from app.core.time_utils import isToday
@@ -9,9 +9,22 @@ from sqlalchemy import select
 import uuid
 
 class TestIsToday:
-    @freeze_time("2025-04-25")
+    @freeze_time("2025-04-25T23:00:00-0600")
     def test_is_today(self):
         assert isToday("2025-04-25T19:00:00-0600")
+
+    @freeze_time("2025-04-25T23:00:00-0600")
+    def test_is_not_today(self):
+        assert not isToday("2025-04-26T19:00:00-0600")
+    
+    @freeze_time("2025-04-25T23:00:00-0600")
+    def test_is_today_utc(self):
+        assert isToday("2025-04-26T01:00:00-0600", use_utc=True)
+    
+    @freeze_time("2025-04-25T23:00:00-0600")
+    def test_is_not_today_utc(self):
+        assert not isToday("2025-04-25T10:00:00-0600", use_utc=True)
+    
 
 @pytest.fixture(scope="class")
 def appointment_details():

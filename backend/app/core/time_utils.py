@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Tuple
 from zoneinfo import ZoneInfo
 from app.config import settings
@@ -35,13 +35,19 @@ def get_center_opening_hours(day_of_week = None, in_utc = True) -> Tuple[datetim
         center_close = center_close.astimezone(ZoneInfo('UTC'))
     return (center_open, center_close)
 
-def isToday(timestamp_string: str) -> bool:
+def isToday(timestamp_string: str, use_utc = False) -> bool:
     '''takes in a date in the format 2025-06-03T19:00:00-0600'''
     # Parse the input timestamp
     timestamp = datetime.fromisoformat(str(timestamp_string))
+    print(timestamp)
+    print(timestamp.tzname())
     
     # Get today's date
-    today = datetime.now()
+    if use_utc:
+        today = datetime.now(tz=timezone.utc)
+    else:
+        today = datetime.now(tz=timezone.utc).astimezone(timestamp.tzinfo)
+    print(today)
     
     # Compare year, month, and day
     return (timestamp.year == today.year and
