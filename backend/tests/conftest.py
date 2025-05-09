@@ -8,13 +8,13 @@ from app.core.acuityClient import AcuityClient, acuity_client
 
 import sys
 from pathlib import Path
-
 # Add the project root directory to the Python path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from app.models import Base
 from app.database import get_db  
 from main import app  
+from app.config import settings
   
 def pytest_addoption(parser):  
     """
@@ -84,6 +84,7 @@ def test_client(db_session):
   
     app.dependency_overrides[get_db] = override_get_db  
     with TestClient(app) as test_client:  
+        test_client.headers.update({"X-API-Key": settings.api_key})
         yield test_client  
 
 
