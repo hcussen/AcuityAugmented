@@ -131,9 +131,10 @@ def _process_event(
     last_name: str,
     hourly_diffs: Dict[str, HourlyDiff]
 ) -> None:
-    old_hour = event.old_time.strftime("%H:%M") if event.old_time else None
-    new_hour = event.new_time.strftime("%H:%M") if event.new_time else None
-    
+    local_tz = ZoneInfo('America/Denver')
+    old_hour = event.old_time.replace(tzinfo=ZoneInfo('UTC')).astimezone(local_tz).strftime("%H:%M") if event.old_time else None
+    new_hour = event.new_time.replace(tzinfo=ZoneInfo('UTC')).astimezone(local_tz).strftime("%H:%M") if event.new_time else None
+    print(f'old, new {old_hour}, {new_hour}')
     simple_event = SimpleEvent(
         id=event.appointment_id,
         first_name=first_name,
@@ -186,11 +187,13 @@ def get_schedule_diff(db: Session = Depends(get_db), api_key: str = Depends(get_
             .order_by(Event.created_at)
             .all()
         )
-
+        print(today_events)
         hourly_diffs = _initialize_hourly_diffs(today_day_of_week)
         
         for event, first_name, last_name, _ in today_events:
+            print(event)
             _process_event(event, first_name, last_name, hourly_diffs)
+            print(hourly_diffs)
                 
         return list(hourly_diffs.values())
 
