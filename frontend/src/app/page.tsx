@@ -12,7 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Clock } from "lucide-react"
 
 export default function Home() {
-  const dayOfWeek = new Date().getDay()
+  const dayOfWeek = new Date().getDay() - 1
   const [scheduleDiff, setScheduleDiff] = useState<Array<HourlyDiff> | null>(
     null
   )

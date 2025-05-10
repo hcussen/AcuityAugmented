@@ -56,7 +56,7 @@ export function wasSnapshotTaken(): boolean {
  */
 export function todaySnapshotTime(): string {
   const now = new Date()
-  if (now.getDay() === 6) {
+  if (now.getDay() - 1 === 6) {
     return "Closed"
   }
   return snapshotTimes[now.getDay() - 1]
