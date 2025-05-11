@@ -12,7 +12,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Clock } from "lucide-react"
 
 export default function Home() {
-  const dayOfWeek = new Date().getDay() - 1
   const [scheduleDiff, setScheduleDiff] = useState<Array<HourlyDiff> | null>(
     null
   )
@@ -74,7 +73,6 @@ export default function Home() {
         created_at_here: new Date(appointment.created_at_here),
         last_modified_here: new Date(appointment.last_modified_here),
       }))
-      console.log(`found ${parsedSchedule.length} appts`)
       setSchedule(parsedSchedule)
     } catch (error) {
       console.error("Error fetching schedule:", error)
@@ -82,18 +80,6 @@ export default function Home() {
       setIsLoading(false)
     }
   }
-
-  // const handleTakeSnapshot = async () => {
-  //   try {
-  //     setIsLoading(true)
-  //     const message = await takeSnapshot()
-  //     console.log(message)
-  //   } catch (error) {
-  //     console.error("Error taking snapshot", error)
-  //   } finally {
-  //     setIsLoading(false)
-  //   }
-  // }
 
   useEffect(() => {
     const fetchDiff = async () => {
@@ -127,20 +113,6 @@ export default function Home() {
           <p>Aurora Mathnasium</p>
 
           <div className="flex gap-2">
-            {/* <Button
-              onClick={handleTakeSnapshot}
-              variant="outline"
-              disabled={isLoading}
-            >
-              {isLoading ? "Processing..." : "Take Snapshot"}
-            </Button>
-            <Button
-              className="bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-              onClick={fetchScheduleData}
-              disabled={isLoading}
-            >
-              {isLoading ? "Loading..." : "Fetch Schedule"}
-            </Button> */}
             <Button
               onClick={() => logout()}
               variant="outline"
@@ -150,11 +122,6 @@ export default function Home() {
             </Button>
           </div>
         </div>
-        {dayOfWeek === 6 && (
-          <p className="my-8">
-            The center is closed today, so these are blank.
-          </p>
-        )}
         {wasSnapshotTaken() ? (
           <>
             <DiffTable scheduleDiff={scheduleDiff} />
