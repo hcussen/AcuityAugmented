@@ -1,6 +1,16 @@
 import { openingHours } from "./settings"
 
+/**
+ * JS Date.getDay() is indexed at 0 = Sunday.
+ * But Python datetime.weekday() is indexed at 0 = Monday.
+ * This function wraps the JS getDay so that it's compatible with the
+ * 0-indexed Python version.
+ */
 type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6
+
+function getWeekday(date: Date): DayOfWeek {
+  return ((((date.getDay() - 1) % 7) + 7) % 7) as DayOfWeek
+}
 
 /**
  * Calculate snapshot times (30 minutes before opening) for each day
@@ -32,7 +42,7 @@ const snapshotTimes = Object.entries(openingHours).reduce(
  */
 export function wasSnapshotTaken(): boolean {
   const now = new Date()
-  const dayOfWeek = (now.getDay() - 1) as DayOfWeek
+  const dayOfWeek = getWeekday(now)
 
   // If center is closed (Sunday), no snapshot needed
   if (
@@ -56,10 +66,10 @@ export function wasSnapshotTaken(): boolean {
  */
 export function todaySnapshotTime(): string {
   const now = new Date()
-  if (now.getDay() - 1 === 6) {
+  if (getWeekday(now) === 6) {
     return "Closed"
   }
-  return snapshotTimes[now.getDay() - 1]
+  return snapshotTimes[getWeekday(now)]
 }
 
 export function militaryToStandard(time: string): string {
