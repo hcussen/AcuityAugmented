@@ -9,7 +9,11 @@ A full-stack application for tracking and visualizing near-real-time schedule ch
 - 🔄 Intuitive diff view for schedule changes
 - 📊 See count of real appointments per hour for staffing management
 - 📱 Responsive UI built with TailwindCSS and shadcn/ui components
-- 📝 Backend test suite with Pytest 
+- 📝 Backend test suite with Pytest
+
+<img src="https://github.com/user-attachments/assets/fd1cec25-2e2a-4b8a-9592-f99aa96e176a" >
+<img src="https://github.com/user-attachments/assets/98c57b76-dc86-4b7a-a0ab-69b5caf4c8f3" />
+
 
 Note that some features, like creating a new account, are purposefully disabled since this was created for my workplace. 
 
