@@ -7,6 +7,7 @@ A full-stack application for tracking and visualizing near-real-time schedule ch
 - 📅 Daily schedule snapshots
 - ⚡ Webhook processing for immediate updates
 - 🔄 Intuitive diff view for schedule changes
+- 📊 See count of real appointments per hour for staffing management
 - 📱 Responsive UI built with TailwindCSS and shadcn/ui components
 - 📝 Backend test suite with Pytest 
 
