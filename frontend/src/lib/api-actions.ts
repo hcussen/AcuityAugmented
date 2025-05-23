@@ -64,3 +64,13 @@ export async function takeSnapshot() {
     throw error
   }
 }
+
+export async function getDummyOpenings() {
+  try {
+    const response = await apiWrapper("acuity/openings/dummy", "GET")
+    return await response.json()
+  } catch (error) {
+    console.error("Error fetching dummy openings:", error)
+    throw error
+  }
+}

@@ -81,3 +81,11 @@ def take_snapshot(db: Session = Depends(get_db), api_key: str = Depends(get_api_
         logger.error(f"Error in take_snapshot: {str(e)}", exc_info=True)
         stack_trace = traceback.format_exc()
         raise HTTPException(status_code=400, detail={"error": str(e), "stack_trace": stack_trace})
+
+@router.get("/openings")
+def get_openings(appt_type: int, date: str = None, today: bool = True, api_key: str = Depends(get_api_key)):
+    return acuity_client.get_openings(appt_type, date, today)
+
+@router.get("/openings/dummy")
+def get_openings_dummy(date: str = None, today: bool = True, api_key: str = Depends(get_api_key)):
+    return acuity_client.get_openings(appt_type=42677283, date=date, today=today)

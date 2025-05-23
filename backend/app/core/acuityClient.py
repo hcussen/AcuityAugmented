@@ -43,6 +43,7 @@ class AcuityClient:
         }
         if limit:
             params['max'] = limit
+
         response = requests.get(
             f"{self.base_url}/appointments",
             headers=self.headers,
@@ -50,5 +51,26 @@ class AcuityClient:
         )
         response.raise_for_status()  # Raise exception for non-200 status codes
         return response.json()
+    
+    def get_openings(self, appt_type: int, date: str = None, today: bool = True) -> List[dict]:
+
+        if today and not date:
+            date = datetime.today().date()
+
+        params = {
+            'calendarID': settings.calendar_id,
+            "date": date,
+            "appointmentTypeID": appt_type
+        }
+
+        response = requests.get(f"{self.base_url}/availability/times",
+            headers=self.headers,
+            params=params
+        )
+
+        response.raise_for_status()
+        return response.json()
+
+
 # Create a singleton instance
 acuity_client = AcuityClient()

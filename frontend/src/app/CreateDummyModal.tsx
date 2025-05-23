@@ -25,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useEffect, useState } from "react"
+import { getDummyOpenings } from "@/lib/api-actions"
 
 interface CreateDummyModalProps {
   open: boolean
@@ -37,6 +38,42 @@ export default function CreateDummyModal({
 }: CreateDummyModalProps) {
   const [selectedHour, setSelectedHour] = useState<string>("")
   const [numDummyToCreate, setNumDummyToCreate] = useState<number>(4)
+  const [availableHours, setAvailableHours] = useState<
+    Array<{
+      value: string
+      label: string
+      openings: number
+    }>
+  >([])
+  const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      setIsLoading(true)
+      getDummyOpenings()
+        .then((data) => {
+          // Transform the API response into our hour format
+          const hours = data.map((slot: any) => {
+            const date = new Date(slot.time)
+            const hour = date.getHours()
+            const displayHour = hour > 12 ? hour - 12 : hour
+            return {
+              value: hour.toString(),
+              label: `${displayHour}:00 ${hour >= 12 ? "PM" : "AM"}`,
+              openings: slot.slotsAvailable || 0,
+            }
+          })
+          setAvailableHours(hours)
+        })
+        .catch((error) => {
+          console.error("Failed to fetch dummy openings:", error)
+          setAvailableHours([])
+        })
+        .finally(() => {
+          setIsLoading(false)
+        })
+    }
+  }, [open])
 
   useEffect(() => {
     setNumDummyToCreate(
@@ -45,19 +82,7 @@ export default function CreateDummyModal({
         availableHours.find((h) => h.value === selectedHour)?.openings || 0
       )
     )
-  }, [selectedHour])
-
-  // Generate available hours (4pm to 7pm)
-  const availableHours = Array.from({ length: 4 }, (_, i) => {
-    const hour = i + 16 // 16 is 4pm in 24-hour format
-    const displayHour = hour > 12 ? hour - 12 : hour
-    return {
-      value: hour.toString(),
-      label: `${displayHour}:00 PM`,
-      appointments: 11, // Dummy data
-      openings: 3, // Dummy data
-    }
-  })
+  }, [selectedHour, availableHours])
 
   const handleConfirm = () => {
     // TODO: Implement dummy appointment creation
@@ -86,17 +111,13 @@ export default function CreateDummyModal({
             <TableHeader>
               <TableRow>
                 <TableHead>Hour</TableHead>
-                <TableHead className="text-right">Real Appointments</TableHead>
-                <TableHead className="text-right">Openings</TableHead>
+                <TableHead className="text-center">Openings</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {availableHours.map((hour) => (
                 <TableRow key={hour.value}>
                   <TableCell>{hour.label}</TableCell>
-                  <TableCell className="text-center">
-                    {hour.appointments}
-                  </TableCell>
                   <TableCell className="text-center">{hour.openings}</TableCell>
                 </TableRow>
               ))}
