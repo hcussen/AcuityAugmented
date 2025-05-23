@@ -140,7 +140,14 @@ export default function Home() {
               Add Dummy Appointments
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent
+            style={{
+              position: "fixed",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+            }}
+          >
             <DialogHeader>
               <DialogTitle>Add Dummy Appointments</DialogTitle>
             </DialogHeader>
