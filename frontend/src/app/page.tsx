@@ -9,7 +9,7 @@ import { getScheduleDiff, getSchedule } from "@/lib/api-actions"
 import { wasSnapshotTaken } from "@/lib/snaphotTimingUtils"
 import { logout } from "./login/actions"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Clock } from "lucide-react"
+import { Clock, Plus } from "lucide-react"
 import CreateDummyModal from "./CreateDummyModal"
 
 export default function Home() {
@@ -124,6 +124,14 @@ export default function Home() {
             </Button>
           </div>
         </div>
+        <Button
+          variant="outline"
+          className="mt-4 bg-blue-500 hover:bg-blue-600 text-white"
+          onClick={() => setDialogOpen(true)}
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Add Dummy Appointments
+        </Button>
         <CreateDummyModal open={dialogOpen} onOpenChange={setDialogOpen} />
         {wasSnapshotTaken() ? (
           <>

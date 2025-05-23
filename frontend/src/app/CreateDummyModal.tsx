@@ -7,8 +7,17 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { useState } from "react"
 
 interface CreateDummyModalProps {
   open: boolean
@@ -19,17 +28,25 @@ export default function CreateDummyModal({
   open,
   onOpenChange,
 }: CreateDummyModalProps) {
+  const [selectedHour, setSelectedHour] = useState<string>("")
+
+  // Generate available hours (4pm to 7pm)
+  const availableHours = Array.from({ length: 4 }, (_, i) => {
+    const hour = i + 16 // 16 is 4pm in 24-hour format
+    const displayHour = hour > 12 ? hour - 12 : hour
+    return {
+      value: hour.toString(),
+      label: `${displayHour}:00 PM`,
+    }
+  })
+
+  const handleConfirm = () => {
+    // TODO: Implement dummy appointment creation
+    onOpenChange(false)
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          className="mt-4 bg-blue-500 hover:bg-blue-600 text-white"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Add Dummy Appointments
-        </Button>
-      </DialogTrigger>
       <DialogContent
         style={{
           position: "fixed",
@@ -40,7 +57,57 @@ export default function CreateDummyModal({
       >
         <DialogHeader>
           <DialogTitle>Add Dummy Appointments</DialogTitle>
+          <DialogDescription>
+            Create dummy appointments for testing purposes.
+          </DialogDescription>
         </DialogHeader>
+
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <label htmlFor="hour" className="text-sm font-medium">
+              Select Hour
+            </label>
+            <Select value={selectedHour} onValueChange={setSelectedHour}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select an hour" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableHours.map((hour) => (
+                  <SelectItem key={hour.value} value={hour.value}>
+                    {hour.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {selectedHour && (
+            <div className="rounded-md bg-muted p-4">
+              <h4 className="text-sm font-medium mb-2">Preview</h4>
+              <ul className="text-sm space-y-1">
+                <li>• 3 dummy appointments will be created</li>
+                <li>
+                  • Scheduled for{" "}
+                  {availableHours.find((h) => h.value === selectedHour)?.label}
+                </li>
+                <li>• Each appointment will be 1 hour long</li>
+              </ul>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirm}
+            disabled={!selectedHour}
+            className="bg-blue-500 hover:bg-blue-600 text-white"
+          >
+            Create Appointments
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
