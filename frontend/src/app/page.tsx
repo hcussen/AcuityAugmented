@@ -9,14 +9,8 @@ import { getScheduleDiff, getSchedule } from "@/lib/api-actions"
 import { wasSnapshotTaken } from "@/lib/snaphotTimingUtils"
 import { logout } from "./login/actions"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Clock, Plus } from "lucide-react"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import { Clock } from "lucide-react"
+import CreateDummyModal from "./CreateDummyModal"
 
 export default function Home() {
   const [scheduleDiff, setScheduleDiff] = useState<Array<HourlyDiff> | null>(
@@ -130,29 +124,7 @@ export default function Home() {
             </Button>
           </div>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button
-              variant="outline"
-              className="mt-4 bg-blue-500 hover:bg-blue-600 text-white"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Dummy Appointments
-            </Button>
-          </DialogTrigger>
-          <DialogContent
-            style={{
-              position: "fixed",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-            }}
-          >
-            <DialogHeader>
-              <DialogTitle>Add Dummy Appointments</DialogTitle>
-            </DialogHeader>
-          </DialogContent>
-        </Dialog>
+        <CreateDummyModal open={dialogOpen} onOpenChange={setDialogOpen} />
         {wasSnapshotTaken() ? (
           <>
             <DiffTable scheduleDiff={scheduleDiff} />
