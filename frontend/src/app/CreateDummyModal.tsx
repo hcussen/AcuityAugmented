@@ -107,40 +107,48 @@ export default function CreateDummyModal({
         </DialogHeader>
 
         <div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Hour</TableHead>
-                <TableHead className="text-center">Openings</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {availableHours.map((hour) => (
-                <TableRow key={hour.value}>
-                  <TableCell>{hour.label}</TableCell>
-                  <TableCell className="text-center">{hour.openings}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          {availableHours.length > 0 ? (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Hour</TableHead>
+                    <TableHead className="text-center">Openings</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {availableHours.map((hour) => (
+                    <TableRow key={hour.value}>
+                      <TableCell>{hour.label}</TableCell>
+                      <TableCell className="text-center">
+                        {hour.openings}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
 
-          <div className="grid gap-2 mt-4">
-            <label htmlFor="hour" className="text-sm font-medium">
-              Select Hour
-            </label>
-            <Select value={selectedHour} onValueChange={setSelectedHour}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select an hour" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableHours.map((hour) => (
-                  <SelectItem key={hour.value} value={hour.value}>
-                    {hour.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              <div className="grid gap-2 mt-4">
+                <label htmlFor="hour" className="text-sm font-medium">
+                  Select Hour
+                </label>
+                <Select value={selectedHour} onValueChange={setSelectedHour}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an hour" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableHours.map((hour) => (
+                      <SelectItem key={hour.value} value={hour.value}>
+                        {hour.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          ) : (
+            <p>No openings today.</p>
+          )}
 
           {selectedHour && (
             <div className="rounded-md bg-muted p-4 mt-4">

@@ -70,6 +70,9 @@ class AcuityClient:
 
         response.raise_for_status()
         return response.json()
+    
+    def create_appointment(self) -> None:
+        pass
 
 
 # Create a singleton instance
