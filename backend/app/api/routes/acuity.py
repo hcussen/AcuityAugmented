@@ -113,12 +113,13 @@ def get_openings_dummy(
 def create_dummy_appointments(
     num_appointments: int, datetime: str, api_key: str = Depends(get_api_key)
 ):
-    print(num_appointments, datetime)
-
-    return acuity_client.create_appointment(
-        datetime,
-        appt_type=acuity_client.appt_types["dummy"],
-        first_name="MyDummy",
-        last_name="MyAppointment",
-        email="test@test.com",
-    )
+    res = []
+    for i in range(num_appointments):
+        res.append(acuity_client.create_appointment(
+            datetime,
+            appt_type=acuity_client.appt_types["dummy"],
+            first_name="MyDummy",
+            last_name="Appointment",
+            email="test@test.com",
+        ))
+    return res 
