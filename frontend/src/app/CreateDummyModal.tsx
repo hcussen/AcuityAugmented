@@ -152,7 +152,6 @@ export default function CreateDummyModal({
 
           {selectedHour && (
             <div className="rounded-md bg-muted p-4 mt-4">
-              {/* <h4 className="text-sm font-medium mb-2">Preview</h4> */}
               <p>
                 <strong>{numDummyToCreate}</strong> dummy appointments will be
                 created for{" "}
@@ -160,13 +159,6 @@ export default function CreateDummyModal({
                   {availableHours.find((h) => h.value === selectedHour)?.label}
                 </strong>
               </p>
-              {/* <ul className="text-sm space-y-1">
-                <li>4 dummy appointments will be created</li>
-                <li>
-                  Scheduled for{" "}
-                  {availableHours.find((h) => h.value === selectedHour)?.label}
-                </li>
-              </ul> */}
             </div>
           )}
         </div>
