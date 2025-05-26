@@ -11,7 +11,9 @@ class AcuityClient:
         self.base_url = "https://acuityscheduling.com/api/v1"
         auth = b64encode(f"{settings.acuity_user_id}:{settings.acuity_api_key}".encode()).decode()
         self.headers = {
-            'Authorization': f'Basic {auth}'
+            'Authorization': f'Basic {auth}',
+            "accept": "application/json",
+            "content-type": "application/json"  
         }
         self.appt_types = {
             'dummy': 42677283
@@ -74,8 +76,8 @@ class AcuityClient:
         response.raise_for_status()
         return response.json()
     
-    def create_appointment(self, datetime: str, appt_type: int, first_name: str, last_name: str, email: str = '') -> None:
-        params = {
+    def create_appointment(self, datetime: str, appt_type: int, first_name: str, last_name: str, email: str = '') -> dict:
+        body = {
             'datetime': datetime,
             'appointmentTypeID': appt_type,
             'calendarID': settings.calendar_id,
@@ -84,13 +86,14 @@ class AcuityClient:
             'email': email
         }
         response = requests.post(
-            f"{self.base_url}/appointments", 
+            f"{self.base_url}/appointments",
             headers=self.headers,
-            params=params
+            json=body,
+            params={'admin': 'true'}
         )
 
         response.raise_for_status()
-        return response
+        return response.json()
 
 
 # Create a singleton instance
