@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/table"
 import { useEffect, useState } from "react"
 import { getDummyOpenings, createDummyAppointments } from "@/lib/api-actions"
+import { Loader } from "@/components/ui/loader"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface CreateDummyModalProps {
   open: boolean
@@ -46,12 +48,15 @@ export default function CreateDummyModal({
     }>
   >([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (open) {
       setIsLoading(true)
-      getDummyOpenings()
-        .then((data) => {
+      const fetchData = async () => {
+        try {
+          const data = await getDummyOpenings()
           // Transform the API response into our hour format
           const hours = data.map((slot: any) => {
             const date = new Date(slot.time)
@@ -64,14 +69,14 @@ export default function CreateDummyModal({
             }
           })
           setAvailableHours(hours)
-        })
-        .catch((error) => {
+        } catch (error) {
           console.error("Failed to fetch dummy openings:", error)
           setAvailableHours([])
-        })
-        .finally(() => {
+        } finally {
           setIsLoading(false)
-        })
+        }
+      }
+      fetchData()
     }
   }, [open])
 
@@ -85,20 +90,29 @@ export default function CreateDummyModal({
     console.log(selectedHour)
   }, [selectedHour, availableHours])
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    setIsCreating(true)
+    setError(null) // Clear any previous errors
     const today = new Date()
-    createDummyAppointments(
-      numDummyToCreate,
-      new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate(),
-        parseInt(selectedHour),
-        0,
-        0
+    try {
+      await createDummyAppointments(
+        numDummyToCreate,
+        new Date(
+          today.getFullYear(),
+          today.getMonth(),
+          today.getDate(),
+          parseInt(selectedHour),
+          0,
+          0
+        )
       )
-    )
-    onOpenChange(false)
+      onOpenChange(false)
+    } catch (error) {
+      console.error("Failed to create dummy appointments:", error)
+      setError("Failed to create appointments.")
+    } finally {
+      setIsCreating(false)
+    }
   }
 
   return (
@@ -111,66 +125,80 @@ export default function CreateDummyModal({
           transform: "translate(-50%, -50%)",
         }}
       >
-        <DialogHeader>
-          <DialogTitle>Add Dummy Appointments</DialogTitle>
-          <DialogDescription>
-            Create dummy appointments to block the schedule.
-          </DialogDescription>
-        </DialogHeader>
-
         <div>
-          {availableHours.length > 0 ? (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Hour</TableHead>
-                    <TableHead className="text-center">Openings</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {availableHours.map((hour) => (
-                    <TableRow key={hour.value}>
-                      <TableCell>{hour.label}</TableCell>
-                      <TableCell className="text-center">
-                        {hour.openings}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+          <DialogHeader>
+            <DialogTitle>Add Dummy Appointments</DialogTitle>
+            <DialogDescription>
+              Create dummy appointments to block the schedule.
+            </DialogDescription>
+          </DialogHeader>
 
-              <div className="grid gap-2 mt-4">
-                <label htmlFor="hour" className="text-sm font-medium">
-                  Select Hour
-                </label>
-                <Select value={selectedHour} onValueChange={setSelectedHour}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select an hour" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableHours.map((hour) => (
-                      <SelectItem key={hour.value} value={hour.value}>
-                        {hour.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </>
+          {isLoading ? (
+            <div className="flex justify-center items-center min-h-[100px]">
+              <Loader size="lg" />
+            </div>
           ) : (
-            <p>No openings today.</p>
-          )}
+            <div>
+              {availableHours.length > 0 ? (
+                <>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Hour</TableHead>
+                        <TableHead className="text-center">Openings</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {availableHours.map((hour) => (
+                        <TableRow key={hour.value}>
+                          <TableCell>{hour.label}</TableCell>
+                          <TableCell className="text-center">
+                            {hour.openings}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
 
-          {selectedHour && (
-            <div className="rounded-md bg-muted p-4 mt-4">
-              <p>
-                <strong>{numDummyToCreate}</strong> dummy appointments will be
-                created for{" "}
-                <strong>
-                  {availableHours.find((h) => h.value === selectedHour)?.label}
-                </strong>
-              </p>
+                  <div className="grid gap-2 mt-4">
+                    <label htmlFor="hour" className="text-sm font-medium">
+                      Select Hour
+                    </label>
+                    <Select
+                      value={selectedHour}
+                      onValueChange={setSelectedHour}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select an hour" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableHours.map((hour) => (
+                          <SelectItem key={hour.value} value={hour.value}>
+                            {hour.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              ) : (
+                <p className="text-center py-8">No openings today.</p>
+              )}
+
+              {selectedHour && (
+                <div className="rounded-md bg-muted p-4 mt-4">
+                  <p>
+                    <strong>{numDummyToCreate}</strong> dummy appointments will
+                    be created for{" "}
+                    <strong>
+                      {
+                        availableHours.find((h) => h.value === selectedHour)
+                          ?.label
+                      }
+                    </strong>
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -179,13 +207,21 @@ export default function CreateDummyModal({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button
-            onClick={handleConfirm}
-            disabled={!selectedHour}
-            className="bg-blue-500 hover:bg-blue-600 text-white"
-          >
-            Create Appointments
-          </Button>
+          <div className="flex flex-col items-end gap-2">
+            <Button
+              onClick={handleConfirm}
+              disabled={!selectedHour || isCreating}
+              className="bg-blue-500 hover:bg-blue-600 text-white"
+            >
+              {isCreating && <Loader size="sm" />}
+              {isCreating ? "Creating..." : "Create Appointments"}
+            </Button>
+            {error && (
+              <Alert variant="destructive" className="w-full">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

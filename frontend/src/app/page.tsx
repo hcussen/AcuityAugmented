@@ -126,7 +126,7 @@ export default function Home() {
         </div>
         <Button
           variant="outline"
-          className="mt-4 bg-blue-500 hover:bg-blue-600 text-white"
+          className="mt-4 bg-blue-500 hover:bg-blue-600 text-white hover:text-white"
           onClick={() => setDialogOpen(true)}
         >
           <Plus className="mr-2 h-4 w-4" />
