@@ -25,7 +25,11 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useEffect, useState } from "react"
-import { getDummyOpenings, createDummyAppointments } from "@/lib/api-actions"
+import {
+  getDummyOpenings,
+  createDummyAppointments,
+  Openings,
+} from "@/lib/api-actions"
 import { Loader } from "@/components/ui/loader"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Check } from "lucide-react"
@@ -67,7 +71,7 @@ export default function CreateDummyModal({
         try {
           const data = await getDummyOpenings()
           // Transform the API response into our hour format
-          const hours = data.map((slot: any) => {
+          const hours = data.map((slot: Openings) => {
             const date = new Date(slot.time)
             const hour = date.getHours()
             const displayHour = hour > 12 ? hour - 12 : hour

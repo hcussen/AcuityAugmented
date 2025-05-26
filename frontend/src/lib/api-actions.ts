@@ -80,7 +80,12 @@ export async function takeSnapshot() {
   }
 }
 
-export async function getDummyOpenings() {
+export type Openings = {
+  time: string
+  slotsAvailable: number
+}
+
+export async function getDummyOpenings(): Promise<Openings[]> {
   try {
     const response = await apiWrapper("acuity/openings/dummy", "GET", {
       // date: "2025-05-27",
