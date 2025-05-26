@@ -128,9 +128,9 @@ def create_dummy_appointments(
             acuity_client.create_appointment(
                 denver_dt_str,
                 appt_type=acuity_client.appt_types["dummy"],
-                first_name="MyDummy",
-                last_name="Appointment",
-                email="test@test.com",
+                first_name="Dummy",
+                last_name="Apt",
+                # email="test@test.com",
             )
         )
     return res

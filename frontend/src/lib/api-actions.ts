@@ -96,7 +96,7 @@ export async function getDummyOpenings() {
 export async function createDummyAppointments(num: number, datetime: Date) {
   try {
     const response = await apiWrapper("acuity/openings/dummy", "POST", {
-      datetime: datetime.toISOString(),
+      date_time: datetime.toISOString(),
       num_appointments: num,
     })
     return await response.json()

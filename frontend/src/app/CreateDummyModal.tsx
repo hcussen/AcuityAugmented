@@ -28,6 +28,7 @@ import { useEffect, useState } from "react"
 import { getDummyOpenings, createDummyAppointments } from "@/lib/api-actions"
 import { Loader } from "@/components/ui/loader"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Check } from "lucide-react"
 
 interface CreateDummyModalProps {
   open: boolean
@@ -47,11 +48,19 @@ export default function CreateDummyModal({
       openings: number
     }>
   >([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [isCreating, setIsCreating] = useState(false)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [isCreating, setIsCreating] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
+  const [isSuccess, setIsSuccess] = useState<boolean>(false)
 
   useEffect(() => {
+    // reset states whenever open state changes
+    setIsCreating(false)
+    setError(null)
+    setIsSuccess(false)
+    setSelectedHour("")
+
+    // if open, fetch data
     if (open) {
       setIsLoading(true)
       const fetchData = async () => {
@@ -93,9 +102,10 @@ export default function CreateDummyModal({
   const handleConfirm = async () => {
     setIsCreating(true)
     setError(null) // Clear any previous errors
-    const today = new Date()
+    setIsSuccess(false) // Clear any previous success state
+    const today = new Date(2025, 4, 27)
     try {
-      await createDummyAppointments(
+      const res = await createDummyAppointments(
         numDummyToCreate,
         new Date(
           today.getFullYear(),
@@ -106,7 +116,11 @@ export default function CreateDummyModal({
           0
         )
       )
-      onOpenChange(false)
+      console.log(res)
+      setIsSuccess(true)
+      // setTimeout(() => {
+      //   onOpenChange(false)
+      // }, 1500) // Give user time to see success message
     } catch (error) {
       console.error("Failed to create dummy appointments:", error)
       setError("Failed to create appointments.")
@@ -129,7 +143,9 @@ export default function CreateDummyModal({
           <DialogHeader>
             <DialogTitle>Add Dummy Appointments</DialogTitle>
             <DialogDescription>
-              Create dummy appointments to block the schedule.
+              Create 4 dummy appointments at a time to block the schedule. If
+              there are less than 4 slots available, only that many will be
+              created.
             </DialogDescription>
           </DialogHeader>
 
@@ -204,13 +220,17 @@ export default function CreateDummyModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            disabled={isCreating}
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
             Cancel
           </Button>
 
           <Button
             onClick={handleConfirm}
-            disabled={!selectedHour || isCreating}
+            disabled={!selectedHour || isCreating || isSuccess}
             className="bg-blue-500 hover:bg-blue-600 text-white"
           >
             {isCreating && <Loader size="sm" />}
@@ -218,8 +238,19 @@ export default function CreateDummyModal({
           </Button>
         </DialogFooter>
         {error && (
-          <Alert variant="destructive" className="w-full">
+          <Alert variant="destructive" className="w-full mt-4">
             <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        {isSuccess && (
+          <Alert
+            className="w-full mt-4 flex items-center border-emerald-500"
+            variant="default"
+          >
+            <Check className="h-6 w-6" color="green" />
+            <AlertDescription>
+              Successfully created appointments!
+            </AlertDescription>
           </Alert>
         )}
       </DialogContent>
