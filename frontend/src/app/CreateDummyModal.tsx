@@ -103,7 +103,7 @@ export default function CreateDummyModal({
     setIsCreating(true)
     setError(null) // Clear any previous errors
     setIsSuccess(false) // Clear any previous success state
-    const today = new Date(2025, 4, 27)
+    const today = new Date()
     try {
       const res = await createDummyAppointments(
         numDummyToCreate,
