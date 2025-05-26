@@ -15,12 +15,27 @@ type Method = "GET" | "POST" | "PUT" | "PATCH"
  * - The `X-API-Key` header is included in the request, using the value of the `API_KEY`
  *   environment variable, or an empty string if not set.
  */
-async function apiWrapper(endpoint: string, verb: Method): Promise<Response> {
+async function apiWrapper(
+  endpoint: string,
+  verb: Method,
+  queryParams?: Record<string, string | number | boolean>
+): Promise<Response> {
   const baseUrl =
     process.env.NODE_ENV === "production"
       ? process.env.API_BASE_URL
       : "http://localhost:8000"
-  const response = await fetch(`${baseUrl}/${endpoint}`, {
+
+  let url = `${baseUrl}/${endpoint}`
+
+  if (queryParams && Object.keys(queryParams).length > 0) {
+    const params = new URLSearchParams()
+    for (const [key, value] of Object.entries(queryParams)) {
+      params.append(key, String(value))
+    }
+    url += `?${params.toString()}`
+  }
+
+  const response = await fetch(url, {
     method: verb,
     headers: {
       "Content-Type": "application/json",
@@ -61,6 +76,37 @@ export async function takeSnapshot() {
     return await response.json()
   } catch (error) {
     console.error("Error taking snapshot:", error)
+    throw error
+  }
+}
+
+export type Openings = {
+  time: string
+  slotsAvailable: number
+}
+
+export async function getDummyOpenings(): Promise<Openings[]> {
+  try {
+    const response = await apiWrapper("acuity/openings/dummy", "GET", {
+      // date: "2025-05-27",
+      today: true,
+    })
+    return await response.json()
+  } catch (error) {
+    console.error("Error fetching dummy openings:", error)
+    throw error
+  }
+}
+
+export async function createDummyAppointments(num: number, datetime: Date) {
+  try {
+    const response = await apiWrapper("acuity/openings/dummy", "POST", {
+      date_time: datetime.toISOString(),
+      num_appointments: num,
+    })
+    return await response.json()
+  } catch (error) {
+    console.error("Error creating dummy openings:", error)
     throw error
   }
 }

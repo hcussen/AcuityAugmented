@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.types import AcuityAppointment
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
-from datetime import datetime 
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from app.core.auth import get_api_key
 from app.core.acuityClient import acuity_client
@@ -12,51 +13,55 @@ from app.models import Appointment, Snapshot
 from app.core.time_utils import get_today_boundaries
 
 from logging import getLogger
+
 logger = getLogger(__name__)
 
-router = APIRouter(
-    prefix="/acuity",
-    tags=["acuity"]
-)
+router = APIRouter(prefix="/acuity", tags=["acuity"])
+
 
 @router.get("/appointment")
 def get_acuity_appointment(id: str, api_key: str = Depends(get_api_key)):
     return acuity_client.get_appointment(id)
 
+
 @router.post("/snapshot")
 def take_snapshot(db: Session = Depends(get_db), api_key: str = Depends(get_api_key)):
-    try: 
+    try:
         appointments = acuity_client.get_appointments()
-        
+
         # Create snapshot record
-        snapshot = Snapshot(
-            dump=appointments
-        )
+        snapshot = Snapshot(dump=appointments)
         db.add(snapshot)
-        
+
         # Get all Acuity IDs from the current API response
-        current_acuity_ids = {appt['id'] for appt in appointments}
-        
+        current_acuity_ids = {appt["id"] for appt in appointments}
+
         # Find and delete appointments that no longer exist in Acuity
         today_start, today_end, _ = get_today_boundaries()
-        deleted_count = db.query(Appointment).filter(
-            and_(
-                Appointment.acuity_id.notin_(current_acuity_ids),
-                Appointment.start_time >= today_start,
-                Appointment.start_time < today_end,
+        deleted_count = (
+            db.query(Appointment)
+            .filter(
+                and_(
+                    Appointment.acuity_id.notin_(current_acuity_ids),
+                    Appointment.start_time >= today_start,
+                    Appointment.start_time < today_end,
+                )
             )
-        ).delete(synchronize_session=False)
-        
+            .delete(synchronize_session=False)
+        )
+
         # Create individual appointment records
         for appt_data in appointments:
             # Convert to AcuityAppointment type for validation
             acuity_appt = AcuityAppointment(**appt_data)
-            
+
             # Check if appointment already exists
-            existing_appt = db.query(Appointment).filter(
-                Appointment.acuity_id == acuity_appt.id
-            ).first()
-            
+            existing_appt = (
+                db.query(Appointment)
+                .filter(Appointment.acuity_id == acuity_appt.id)
+                .first()
+            )
+
             if existing_appt:
                 # Update existing appointment if needed
                 existing_appt.start_time = datetime.fromisoformat(acuity_appt.datetime)
@@ -72,12 +77,60 @@ def take_snapshot(db: Session = Depends(get_db), api_key: str = Depends(get_api_
         return {
             "message": "Snapshot and appointments saved successfully",
             "count": len(appointments),
-            "deleted_count": deleted_count
+            "deleted_count": deleted_count,
         }
 
     except Exception as e:
         db.rollback()  # Rollback any changes if there's an error
         import traceback
+
         logger.error(f"Error in take_snapshot: {str(e)}", exc_info=True)
         stack_trace = traceback.format_exc()
-        raise HTTPException(status_code=400, detail={"error": str(e), "stack_trace": stack_trace})
+        raise HTTPException(
+            status_code=400, detail={"error": str(e), "stack_trace": stack_trace}
+        )
+
+
+@router.get("/openings")
+def get_openings(
+    appt_type: int,
+    date: str = None,
+    today: bool = True,
+    api_key: str = Depends(get_api_key),
+):
+    return acuity_client.get_openings(appt_type, date, today)
+
+
+@router.get("/openings/dummy")
+def get_openings_dummy(
+    date: str = None, today: bool = True, api_key: str = Depends(get_api_key)
+):
+    return acuity_client.get_openings(
+        appt_type=acuity_client.appt_types["dummy"], date=date, today=today
+    )
+
+
+@router.post("/openings/dummy")
+def create_dummy_appointments(
+    num_appointments: int, date_time: str, api_key: str = Depends(get_api_key)
+):  
+    # datetime is coming in the format 2025-06-28T00:00:00.000Z, from a JS Date object 
+    print(date_time)
+    # Convert UTC ISO string to Denver timezone
+    utc_dt = datetime.fromisoformat(date_time.replace('Z', '+0000'))
+    denver_dt = utc_dt.astimezone(ZoneInfo("America/Denver"))
+    # Format in ATOM format with Denver timezone offset
+    denver_dt_str = denver_dt.isoformat()
+    print(denver_dt_str)
+    res = []
+    for i in range(num_appointments):
+        res.append(
+            acuity_client.create_appointment(
+                denver_dt_str,
+                appt_type=acuity_client.appt_types["dummy"],
+                first_name="Dummy",
+                last_name="Apt",
+                # email="test@test.com",
+            )
+        )
+    return res
