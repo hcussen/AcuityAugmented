@@ -13,6 +13,9 @@ class AcuityClient:
         self.headers = {
             'Authorization': f'Basic {auth}'
         }
+        self.appt_types = {
+            'dummy': 42677283
+        }
     
     def get_appointment(self, appointment_id: str) -> AcuityAppointment:
         """Fetch appointment details from Acuity API
@@ -53,7 +56,7 @@ class AcuityClient:
         return response.json()
     
     def get_openings(self, appt_type: int, date: str = None, today: bool = True) -> List[dict]:
-
+        
         if today and not date:
             date = datetime.today().date()
 
@@ -71,8 +74,23 @@ class AcuityClient:
         response.raise_for_status()
         return response.json()
     
-    def create_appointment(self) -> None:
-        pass
+    def create_appointment(self, datetime: str, appt_type: int, first_name: str, last_name: str, email: str = '') -> None:
+        params = {
+            'datetime': datetime,
+            'appointmentTypeID': appt_type,
+            'calendarID': settings.calendar_id,
+            'firstName': first_name,
+            'lastName': last_name,
+            'email': email
+        }
+        response = requests.post(
+            f"{self.base_url}/appointments", 
+            headers=self.headers,
+            params=params
+        )
+
+        response.raise_for_status()
+        return response
 
 
 # Create a singleton instance

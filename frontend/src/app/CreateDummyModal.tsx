@@ -88,10 +88,17 @@ export default function CreateDummyModal({
   const handleConfirm = () => {
     // TODO: Implement dummy appointment creation
     const today = new Date()
-    console.log(parseInt(selectedHour))
-    today.setDate(27)
-    today.setHours(parseInt(selectedHour))
-    createDummyAppointments(numDummyToCreate, today)
+    createDummyAppointments(
+      numDummyToCreate,
+      new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+        parseInt(selectedHour),
+        0,
+        0
+      )
+    )
     onOpenChange(false)
   }
 

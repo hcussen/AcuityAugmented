@@ -88,8 +88,10 @@ def get_openings(appt_type: int, date: str = None, today: bool = True, api_key: 
 
 @router.get("/openings/dummy")
 def get_openings_dummy(date: str = None, today: bool = True, api_key: str = Depends(get_api_key)):
-    return acuity_client.get_openings(appt_type=42677283, date=date, today=today)
+    return acuity_client.get_openings(appt_type=acuity_client.appt_types['dummy'], date=date, today=today)
 
 @router.post("/openings/dummy")
 def create_dummy_appointments(num_appointments: int, datetime: str, api_key: str = Depends(get_api_key)):
     print(num_appointments, datetime)
+
+    return acuity_client.create_appointment(datetime, appt_type=acuity_client.appt_types['dummy'], first_name="MyDummy", last_name='MyAppointment', email='test@test.com')
