@@ -3,6 +3,7 @@ from app.types import AcuityAppointment
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from app.core.auth import get_api_key
 from app.core.acuityClient import acuity_client
@@ -111,15 +112,25 @@ def get_openings_dummy(
 
 @router.post("/openings/dummy")
 def create_dummy_appointments(
-    num_appointments: int, datetime: str, api_key: str = Depends(get_api_key)
-):
+    num_appointments: int, date_time: str, api_key: str = Depends(get_api_key)
+):  
+    # datetime is coming in the format 2025-06-28T00:00:00.000Z, from a JS Date object 
+    print(date_time)
+    # Convert UTC ISO string to Denver timezone
+    utc_dt = datetime.fromisoformat(date_time.replace('Z', '+0000'))
+    denver_dt = utc_dt.astimezone(ZoneInfo("America/Denver"))
+    # Format in ATOM format with Denver timezone offset
+    denver_dt_str = denver_dt.isoformat()
+    print(denver_dt_str)
     res = []
     for i in range(num_appointments):
-        res.append(acuity_client.create_appointment(
-            datetime,
-            appt_type=acuity_client.appt_types["dummy"],
-            first_name="MyDummy",
-            last_name="Appointment",
-            email="test@test.com",
-        ))
-    return res 
+        res.append(
+            acuity_client.create_appointment(
+                denver_dt_str,
+                appt_type=acuity_client.appt_types["dummy"],
+                first_name="MyDummy",
+                last_name="Appointment",
+                email="test@test.com",
+            )
+        )
+    return res
