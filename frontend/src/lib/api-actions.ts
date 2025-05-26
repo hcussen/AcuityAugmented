@@ -84,6 +84,7 @@ export async function getDummyOpenings() {
   try {
     const response = await apiWrapper("acuity/openings/dummy", "GET", {
       date: "2025-05-27",
+      // today: true,
     })
     return await response.json()
   } catch (error) {
