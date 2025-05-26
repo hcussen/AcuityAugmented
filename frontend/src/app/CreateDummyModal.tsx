@@ -207,22 +207,21 @@ export default function CreateDummyModal({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <div className="flex flex-col items-end gap-2">
-            <Button
-              onClick={handleConfirm}
-              disabled={!selectedHour || isCreating}
-              className="bg-blue-500 hover:bg-blue-600 text-white"
-            >
-              {isCreating && <Loader size="sm" />}
-              {isCreating ? "Creating..." : "Create Appointments"}
-            </Button>
-            {error && (
-              <Alert variant="destructive" className="w-full">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-          </div>
+
+          <Button
+            onClick={handleConfirm}
+            disabled={!selectedHour || isCreating}
+            className="bg-blue-500 hover:bg-blue-600 text-white"
+          >
+            {isCreating && <Loader size="sm" />}
+            {isCreating ? "Creating..." : "Create Appointments"}
+          </Button>
         </DialogFooter>
+        {error && (
+          <Alert variant="destructive" className="w-full">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
       </DialogContent>
     </Dialog>
   )
