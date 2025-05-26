@@ -25,7 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useEffect, useState } from "react"
-import { getDummyOpenings } from "@/lib/api-actions"
+import { getDummyOpenings, createDummyAppointments } from "@/lib/api-actions"
 
 interface CreateDummyModalProps {
   open: boolean
@@ -82,10 +82,16 @@ export default function CreateDummyModal({
         availableHours.find((h) => h.value === selectedHour)?.openings || 0
       )
     )
+    console.log(selectedHour)
   }, [selectedHour, availableHours])
 
   const handleConfirm = () => {
     // TODO: Implement dummy appointment creation
+    const today = new Date()
+    console.log(parseInt(selectedHour))
+    today.setDate(27)
+    today.setHours(parseInt(selectedHour))
+    createDummyAppointments(numDummyToCreate, today)
     onOpenChange(false)
   }
 

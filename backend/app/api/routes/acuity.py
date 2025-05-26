@@ -92,4 +92,4 @@ def get_openings_dummy(date: str = None, today: bool = True, api_key: str = Depe
 
 @router.post("/openings/dummy")
 def create_dummy_appointments(num_appointments: int, datetime: str, api_key: str = Depends(get_api_key)):
-    pass
+    print(num_appointments, datetime)
